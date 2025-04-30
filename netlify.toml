@@ -1,17 +1,17 @@
 # netlify.toml — Astrografia 🌌 (2025-04-30)
-# -----------------------------------------------
-# Configurações de Build e Functions
-# Site:      arquivos estáticos em /src
-# Functions: serverless em /netlify/functions
-# API proxy: amigável com /api/*
+# ----------------------------------------------------
+# Configuração de build, API e funções serverless
 
 [build]
   publish   = "src"
   functions = "netlify/functions"
 
 [functions]
-  node_bundler = "esbuild"  # Suporte a import/export modernos
-  included_files = ["utils/**"]
+  node_bundler = "esbuild"  # Suporte a import/export e require modernos
+  included_files = [
+    "utils/**",             # Inclui utilitários externos às funções
+    "netlify/functions/**"  # Garante que dependências locais entre funções sejam inclusas
+  ]
 
 [[redirects]]
   from = "/api/*"
