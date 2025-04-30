@@ -1,4 +1,4 @@
-// Astrografia 🌌 — Núcleo Consolidado v1.2 (2025-04-30)
+// Astrografia 🌌 — Núcleo Consolidado v1.3 (2025-04-30)
 (() => {
   'use strict';
 
@@ -20,6 +20,7 @@
   const summaryEl     = $('#summary');
   const chartEl       = $('#chart-container');
   const downloadBtn   = $('#downloadPDF');
+  const reportEl      = $('#report-container');
 
   // ===== Função principal de requisição =====
   async function fetchAstroData(userData) {
@@ -36,15 +37,16 @@
         throw new Error('Erro na requisição');
       }
 
-      const { summary, chartSVG, pdfBase64 } = await res.json();
-      return { summary, chartSVG, pdfBase64 };
+      const { summary, chartSVG, pdfBase64, htmlReport } = await res.json();
+      return { summary, chartSVG, pdfBase64, htmlReport };
 
     } catch (err) {
       console.error('[Astrografia] Erro ao gerar mapa astral:', err);
       return {
         summary: '⚠️ Não foi possível gerar o mapa astral agora.',
         chartSVG: '',
-        pdfBase64: ''
+        pdfBase64: '',
+        htmlReport: ''
       };
     }
   }
@@ -63,10 +65,11 @@
 
     summaryEl.textContent = '⌛ Gerando seu mapa astral...';
     chartEl.innerHTML = '';
+    reportEl.innerHTML = '';
     resultSection.classList.remove('hidden');
     downloadBtn.classList.add('hidden');
 
-    const { summary, chartSVG, pdfBase64 } = await fetchAstroData({
+    const { summary, chartSVG, pdfBase64, htmlReport } = await fetchAstroData({
       name,
       birthDate,
       birthTime,
@@ -75,6 +78,7 @@
 
     summaryEl.textContent = summary || '⚠️ Relatório indisponível.';
     chartEl.innerHTML = chartSVG || '';
+    reportEl.innerHTML = htmlReport || '<p>⚠️ Relatório indisponível.</p>';
 
     if (pdfBase64) {
       downloadBtn.classList.remove('hidden');
