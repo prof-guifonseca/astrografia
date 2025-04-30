@@ -145,6 +145,12 @@ label {
 .btn:active {
   transform: scale(0.96);
 }
+.btn:disabled {
+  background: var(--muted);
+  cursor: not-allowed;
+  transform: none;
+  opacity: 0.7;
+}
 
 /*—— Preview do Relatório ———————————————————————*/
 .report-html {
@@ -166,6 +172,11 @@ label {
 }
 .report-html strong {
   color: var(--primary);
+}
+
+/*—— Utilitários —————————————————————————————*/
+.hidden {
+  display: none !important;
 }
 
 /*—— Animações —————————————————————————————*/
