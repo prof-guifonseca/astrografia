@@ -1,8 +1,7 @@
-require('dotenv').config(); // habilita leitura do .env local em desenvolvimento
+require('dotenv').config(); // apenas útil em desenvolvimento local
 
 const { OpenAI } = require('openai');
 const { marked } = require('marked');
-const puppeteer = require('puppeteer');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -52,63 +51,26 @@ Evite termos técnicos excessivos. Use linguagem fluida e humanizada. Retorne to
         { role: 'user', content: prompt }
       ],
       temperature: 0.8,
-      max_tokens: 16000
+      max_tokens: 7000
     });
 
     console.log('[Astrografia] Resposta da OpenAI recebida.');
     console.log('[Astrografia] Tokens utilizados:', response?.usage?.total_tokens || 'n/d');
 
     const fullReport = response?.choices?.[0]?.message?.content || '⚠️ Não foi possível gerar o relatório.';
-    const htmlContent = marked.parse(fullReport);
-
-    const htmlWrapper = `
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body {
-              font-family: 'Georgia', serif;
-              padding: 2rem;
-              line-height: 1.6;
-              color: #222;
-              max-width: 800px;
-              margin: auto;
-            }
-            h1, h2, h3 {
-              color: #6A5ACD;
-            }
-            hr {
-              margin: 2rem 0;
-            }
-          </style>
-        </head>
-        <body>
-          <h1>Relatório Astrológico de ${name}</h1>
-          ${htmlContent}
-        </body>
-      </html>
-    `;
-
-    const browser = await puppeteer.launch({ headless: 'new' });
-    const page = await browser.newPage();
-    await page.setContent(htmlWrapper, { waitUntil: 'load' });
-    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
-    await browser.close();
-
-    const pdfBase64 = pdfBuffer.toString('base64');
+    const htmlReport = marked.parse(fullReport);
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         summary: "Relatório gerado com sucesso.",
         fullReport,
-        htmlReport: htmlContent,
-        pdfBase64
+        htmlReport
       })
     };
 
   } catch (err) {
-    console.error('[Astrografia] Erro ao gerar PDF:', err);
+    console.error('[Astrografia] Erro ao gerar HTML:', err);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Erro interno ao gerar o relatório.' })
