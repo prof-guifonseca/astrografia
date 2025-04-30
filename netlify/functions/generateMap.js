@@ -1,4 +1,4 @@
-require('dotenv').config(); // apenas útil em desenvolvimento local
+require('dotenv').config(); // apenas para uso local
 
 const { OpenAI } = require('openai');
 const { marked } = require('marked');
@@ -20,36 +20,35 @@ exports.handler = async (event) => {
     }
 
     const prompt = `
-Você é um astrólogo experiente, com linguagem envolvente e acessível. Gere um relatório astrológico completo com cerca de 2 páginas, dividido nas seções abaixo, com base nos seguintes dados:
+Você é um astrólogo experiente, com linguagem acessível e poética. Crie um relatório astrológico resumido (4 a 5 páginas) com base nos dados abaixo:
 
 - Nome: ${name}
 - Data de nascimento: ${birthDate}
-- Hora de nascimento: ${birthTime}
-- Local de nascimento: ${birthPlace}
+- Hora: ${birthTime}
+- Local: ${birthPlace}
 
-O relatório deve conter:
+Divida o conteúdo nas seções:
 
-1. Introdução
-2. Sol, Lua e Ascendente
-3. Vida afetiva
-4. Vida profissional
-5. Desafios
-6. Conselho
+## Introdução  
+## Sol, Lua e Ascendente  
+## Temas de Vida  
+## Relações e Emoções  
+## Caminho Pessoal
 
-Evite termos técnicos excessivos. Use linguagem fluida e humanizada. Retorne todo o conteúdo em formato Markdown (## títulos e texto organizado).
+Use Markdown e linguagem fluida. Evite termos técnicos. Seja acolhedor.
     `.trim();
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'gpt-3.5-turbo',
       messages: [
         {
           role: 'system',
-          content: 'Você é um astrólogo experiente e sensível, especialista em relatórios completos.'
+          content: 'Você é um astrólogo experiente e acolhedor.'
         },
         { role: 'user', content: prompt }
       ],
-      temperature: 0.8,
-      max_tokens: 1500
+      temperature: 0.7,
+      max_tokens: 3000
     });
 
     console.log('[Astrografia] Resposta da OpenAI recebida.');
@@ -68,7 +67,7 @@ Evite termos técnicos excessivos. Use linguagem fluida e humanizada. Retorne to
     };
 
   } catch (err) {
-    console.error('[Astrografia] Erro ao gerar HTML:', err);
+    console.error('[Astrografia] Erro ao gerar relatório:', err);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Erro interno ao gerar o relatório.' })
