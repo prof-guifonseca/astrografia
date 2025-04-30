@@ -3,12 +3,15 @@ require('dotenv').config();
 const { julian, solar, moonposition, planetposition, data, base } = require('astronomia');
 
 // Carregar efemérides VSOP87
-const earth = new planetposition.Planet(data.vsop87Bearth);
+const earth   = new planetposition.Planet(data.vsop87Bearth);
 const mercury = new planetposition.Planet(data.vsop87Bmercury);
 const venus   = new planetposition.Planet(data.vsop87Bvenus);
 const mars    = new planetposition.Planet(data.vsop87Bmars);
 const jupiter = new planetposition.Planet(data.vsop87Bjupiter);
 const saturn  = new planetposition.Planet(data.vsop87Bsaturn);
+const uranus  = new planetposition.Planet(data.vsop87Buranus);
+const neptune = new planetposition.Planet(data.vsop87Bneptune);
+const pluto   = new planetposition.Planet(data.vsop87Bpluto);
 
 const DEG = base.RAD2DEG;
 const signos = [
@@ -21,6 +24,14 @@ function grauParaSigno(degree) {
   const signo = signos[index];
   const grauNoSigno = +(degree % 30).toFixed(2);
   return { sign: signo, degree: grauNoSigno };
+}
+
+// Calcula longitude geocêntrica do planeta
+function planetGeoLongitude(jd, planet) {
+  const earthPos = earth.position(jd);
+  const planetPos = planet.position(jd);
+  const { lon } = base.geocentricPosition(earthPos, planetPos);
+  return base.pmod(lon * DEG, 360);
 }
 
 exports.handler = async (event) => {
@@ -40,31 +51,25 @@ exports.handler = async (event) => {
     const decimalDay = day + (hour + minute / 60) / 24;
     const jd = julian.CalendarGregorianToJD(year, month, decimalDay);
 
-    // Sol e Lua
-    const solLon  = solar.apparentLongitude(jd);
-    const luaLon  = moonposition.position(jd).lon;
-
-    // Planetas com efemérides
-    const mercLon = planetGeoLongitude(jd, mercury);
-    const venLon  = planetGeoLongitude(jd, venus);
-    const marLon  = planetGeoLongitude(jd, mars);
-    const jupLon  = planetGeoLongitude(jd, jupiter);
-    const satLon  = planetGeoLongitude(jd, saturn);
-
     const lista = [
-      { name: 'Sol',      total: solLon },
-      { name: 'Lua',      total: luaLon },
-      { name: 'Mercúrio', total: mercLon },
-      { name: 'Vênus',    total: venLon },
-      { name: 'Marte',    total: marLon },
-      { name: 'Júpiter',  total: jupLon },
-      { name: 'Saturno',  total: satLon }
+      { name: 'Sol',      total: solar.apparentLongitude(jd) },
+      { name: 'Lua',      total: moonposition.position(jd).lon },
+      { name: 'Mercúrio', total: planetGeoLongitude(jd, mercury) },
+      { name: 'Vênus',    total: planetGeoLongitude(jd, venus) },
+      { name: 'Marte',    total: planetGeoLongitude(jd, mars) },
+      { name: 'Júpiter',  total: planetGeoLongitude(jd, jupiter) },
+      { name: 'Saturno',  total: planetGeoLongitude(jd, saturn) },
+      { name: 'Urano',    total: planetGeoLongitude(jd, uranus) },
+      { name: 'Netuno',   total: planetGeoLongitude(jd, neptune) },
+      { name: 'Plutão',   total: planetGeoLongitude(jd, pluto) }
     ];
 
     const planets = lista.map(obj => {
       const { sign, degree } = grauParaSigno(obj.total);
       return { name: obj.name, degree: +obj.total.toFixed(2), sign, signDegree: degree };
     });
+
+    console.log('[Astrografia] Planetas calculados:', planets);
 
     return {
       statusCode: 200,
@@ -79,11 +84,3 @@ exports.handler = async (event) => {
     };
   }
 };
-
-// Calcula longitude geocêntrica do planeta
-function planetGeoLongitude(jd, planet) {
-  const earthPos = earth.position(jd);
-  const planetPos = planet.position(jd);
-  const { lon } = base.geocentricPosition(earthPos, planetPos);
-  return base.pmod(lon * DEG, 360);
-}
