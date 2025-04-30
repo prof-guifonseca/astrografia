@@ -1,0 +1,19 @@
+# netlify.toml — Astrografia 🌌 (versão atualizada)
+# --------------------------------------------------
+# Configura o diretório de build e as funções serverless utilizadas
+
+[build]
+  publish   = "src"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+  included_files = [
+    "netlify/functions/**"
+  ]
+
+[[redirects]]
+  from = "/api/*"
+  to   = "/.netlify/functions/:splat"
+  status = 200
+  force  = true

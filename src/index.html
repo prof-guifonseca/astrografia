@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#2C225C" />
+  <title>Astrografia 🌌 • Seu Mapa Astral Personalizado</title>
+
+  <!-- Estilos -->
+  <link rel="stylesheet" href="assets/styles.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <header class="app-header">
+    <h1>Astrografia 🌌</h1>
+    <p class="subtitle">Descubra os caminhos que o céu escreve para você</p>
+  </header>
+
+  <main role="main">
+    <!-- Formulário -->
+    <section id="form-section" class="card" aria-labelledby="form-title">
+      <h2 id="form-title">Preencha seus dados astrais</h2>
+
+      <label for="name">Nome completo</label>
+      <input type="text" id="name" name="name" placeholder="Ex: Ana Oliveira" autocomplete="name" required />
+
+      <label for="birthDate">Data de nascimento</label>
+      <input type="date" id="birthDate" name="birthDate" autocomplete="bday" required />
+
+      <label for="birthTime">Hora de nascimento</label>
+      <input type="time" id="birthTime" name="birthTime" autocomplete="off" required />
+
+      <label for="birthPlace">Local de nascimento</label>
+      <input type="text" id="birthPlace" name="birthPlace" placeholder="Cidade, Estado" autocomplete="address-level2" required />
+
+      <button id="generateMap" class="btn">Gerar Mapa Astral</button>
+    </section>
+
+    <!-- Resultado do Mapa -->
+    <section id="result-section" class="card hidden" aria-labelledby="result-title">
+      <h2 id="result-title">Seu Mapa Astral</h2>
+      <p id="summary"></p>
+      <div id="chart-container"></div>
+      <div id="report-container" class="report-html"></div>
+      <button id="printReport" class="btn">Imprimir Relatório</button>
+    </section>
+
+    <!-- Botões Premium -->
+    <section class="section-buttons card hidden" id="premium-sections">
+      <h3>Explorar Relatórios Temáticos</h3>
+      <div class="btn-grid">
+        <button class="btn-section" data-topic="amor">❤️ Vida Amorosa</button>
+        <button class="btn-section" data-topic="carreira">💼 Vida Profissional</button>
+        <button class="btn-section" data-topic="familia">🏠 Família e Origens</button>
+        <button class="btn-section" data-topic="espiritualidade">🧘 Espiritualidade</button>
+        <button class="btn-section" data-topic="missao">🚀 Missão de Vida</button>
+        <button class="btn-section" data-topic="desafios">⚖️ Desafios Pessoais</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Impressão
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('printReport')?.addEventListener('click', () => window.print());
+    });
+
+    // Interpretação Premium
+    let dadosGerados = null;
+
+    document.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-topic]');
+      if (!btn || !dadosGerados) return;
+
+      const tema = btn.dataset.topic;
+
+      // Oculta relatório anterior
+      document.getElementById('report-container').innerHTML = '';
+      document.querySelectorAll('.btn-section').forEach(b => b.disabled = false);
+      btn.disabled = true;
+      btn.textContent = 'Gerando...';
+
+      try {
+        const res = await fetch('/.netlify/functions/interpretSection', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tema, planetas: dadosGerados })
+        });
+
+        const json = await res.json();
+        document.getElementById('report-container').innerHTML = json.html || '<p>⚠️ Não foi possível interpretar.</p>';
+      } catch (err) {
+        console.error('Erro ao interpretar:', err);
+        document.getElementById('report-container').innerHTML = '<p>⚠️ Erro ao gerar interpretação.</p>';
+      }
+
+      btn.textContent = 'Gerar novamente';
+    });
+
+    // Exibe botões após gerar o mapa (gatilho via script.js externo)
+    window.revelarBotoesPremium = () => {
+      document.getElementById('premium-sections')?.classList.remove('hidden');
+    };
+  </script>
+</body>
+</html>
