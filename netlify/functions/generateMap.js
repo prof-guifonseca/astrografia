@@ -102,6 +102,7 @@ Evite termos técnicos excessivos. Use linguagem fluida e humanizada. Retorne to
       body: JSON.stringify({
         summary: "Relatório gerado com sucesso.",
         fullReport,
+        htmlReport: htmlContent,
         pdfBase64
       })
     };
