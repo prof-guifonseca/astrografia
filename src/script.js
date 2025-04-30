@@ -1,10 +1,10 @@
-// Astrografia 🌌 — Núcleo Consolidado v1.1 (2025-04-30)
+// Astrografia 🌌 — Núcleo Consolidado v1.2 (2025-04-30)
 (() => {
   'use strict';
 
   // ===== Configurações =====
   const API = {
-    generate: '/.netlify/functions/generateMap'
+    generate: '/api/generateMap' // usa redirect configurado no netlify.toml
   };
 
   // ===== Utilitários DOM =====
@@ -30,10 +30,15 @@
         body: JSON.stringify(userData)
       });
 
-      if (!res.ok) throw new Error();
-      const { summary, chartSVG, pdfBase64 } = await res.json();
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('[Astrografia] Erro HTTP:', res.status, errorText);
+        throw new Error('Erro na requisição');
+      }
 
+      const { summary, chartSVG, pdfBase64 } = await res.json();
       return { summary, chartSVG, pdfBase64 };
+
     } catch (err) {
       console.error('[Astrografia] Erro ao gerar mapa astral:', err);
       return {
@@ -74,12 +79,27 @@
     if (pdfBase64) {
       downloadBtn.classList.remove('hidden');
       downloadBtn.onclick = () => {
+        const blob = b64toBlob(pdfBase64, 'application/pdf');
+        const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = 'data:application/pdf;base64,' + pdfBase64;
+        link.href = url;
         link.download = `relatorio-astrografia-${name}.pdf`;
         link.click();
+        URL.revokeObjectURL(url);
       };
     }
   });
+
+  // ===== Função auxiliar: converte base64 para Blob =====
+  function b64toBlob(base64, mime = '') {
+    const byteChars = atob(base64);
+    const byteArrays = [];
+    for (let i = 0; i < byteChars.length; i += 512) {
+      const slice = byteChars.slice(i, i + 512);
+      const byteNumbers = new Array(slice.length).fill().map((_, j) => slice.charCodeAt(j));
+      byteArrays.push(new Uint8Array(byteNumbers));
+    }
+    return new Blob(byteArrays, { type: mime });
+  }
 
 })();
