@@ -20,7 +20,7 @@ exports.handler = async (event) => {
     }
 
     const prompt = `
-Você é um astrólogo experiente, com linguagem envolvente e acessível. Gere um relatório astrológico completo com cerca de 4 páginas, dividido nas seções abaixo, com base nos seguintes dados:
+Você é um astrólogo experiente, com linguagem envolvente e acessível. Gere um relatório astrológico completo com cerca de 2-3 páginas, dividido nas seções abaixo, com base nos seguintes dados:
 
 - Nome: ${name}
 - Data de nascimento: ${birthDate}
@@ -31,12 +31,10 @@ O relatório deve conter:
 
 1. Introdução personalizada
 2. Interpretação do Sol, Lua e Ascendente
-3. Análise das 12 casas
-4. Aspectos planetários relevantes
-5. Vida afetiva
-6. Potencial profissional
-7. Desafios e karmas
-8. Conselho final simbólico
+3. Vida afetiva
+4. Vida profissional
+5. Desafios
+6. Conselho
 
 Evite termos técnicos excessivos. Use linguagem fluida e humanizada. Retorne todo o conteúdo em formato Markdown (## títulos e texto organizado).
     `.trim();
