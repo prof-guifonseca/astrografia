@@ -1,10 +1,14 @@
+// astrografia-api/api/generateMap.js
+
 import { OpenAI } from 'openai';
 import { marked } from 'marked';
 
+// Inicializa OpenAI com chave do ambiente (.env na Vercel)
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
+// Função serverless exportada conforme padrão da Vercel
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método não permitido' });
@@ -49,7 +53,7 @@ Use linguagem fluida e acolhedora, com tom inspirador. **Não inclua imagens, ma
     const fullReport = response?.choices?.[0]?.message?.content || '⚠️ Não foi possível gerar o relatório.';
     const htmlReport = marked.parse(fullReport);
 
-    res.setHeader('Access-Control-Allow-Origin', '*'); // permite uso com frontend externo
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.status(200).json({
       summary: "Relatório gerado com sucesso.",
       fullReport,
