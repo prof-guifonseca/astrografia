@@ -45,7 +45,7 @@ Use linguagem fluida e acolhedora, com tom inspirador. **Não inclua imagens, ma
         { role: 'user', content: prompt }
       ],
       temperature: 0.7,
-      max_tokens: 600
+      max_tokens: 300
     });
 
     console.log('[Astrografia] Resposta da OpenAI recebida.');
