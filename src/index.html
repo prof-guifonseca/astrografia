@@ -45,7 +45,18 @@
       <p id="summary"></p>
       <div id="chart-container"></div>
       <div id="report-container" class="report-html"></div>
+      <button id="printReport" class="btn">Imprimir Relatório</button>
     </section>
   </main>
+
+  <script>
+    // Botão de impressão
+    document.addEventListener('DOMContentLoaded', () => {
+      const printBtn = document.getElementById('printReport');
+      printBtn.addEventListener('click', () => {
+        window.print();
+      });
+    });
+  </script>
 </body>
 </html>
