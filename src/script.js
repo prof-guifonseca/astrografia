@@ -1,9 +1,9 @@
-// Astrografia 🌌 — Núcleo Consolidado v1.5 (Assíncrono)
+// Astrografia 🌌 — Núcleo Consolidado v1.6 (HTML direto)
 (() => {
   'use strict';
 
   const API = {
-    generate: '/.netlify/functions/iniciarGeracaoMapa'
+    generate: '/.netlify/functions/generateMap'
   };
 
   const $ = selector => document.querySelector(selector);
@@ -16,11 +16,10 @@
   const resultSection = $('#result-section');
   const summaryEl     = $('#summary');
   const chartEl       = $('#chart-container');
-  const downloadBtn   = $('#downloadPDF');
   const reportEl      = $('#report-container');
 
-  // Envia dados e inicia processo assíncrono
-  async function iniciarGeracaoAssincrona(userData) {
+  // Chamada ao backend que retorna o HTML interpretado
+  async function gerarRelatorioHTML(userData) {
     try {
       const res = await fetch(API.generate, {
         method: 'POST',
@@ -31,15 +30,18 @@
       if (!res.ok) {
         const errorText = await res.text();
         console.error('[Astrografia] Erro HTTP:', res.status, errorText);
-        throw new Error('Erro ao iniciar geração');
+        throw new Error('Erro ao gerar relatório');
       }
 
-      const { mensagem } = await res.json();
-      return mensagem || 'Mapa astral em processamento.';
+      const { summary, htmlReport } = await res.json();
+      return { summary, htmlReport };
 
     } catch (err) {
-      console.error('[Astrografia] Falha ao iniciar mapa astral:', err);
-      return '⚠️ Não foi possível iniciar a geração do mapa astral.';
+      console.error('[Astrografia] Falha na geração do relatório:', err);
+      return {
+        summary: '⚠️ Não foi possível gerar o mapa astral agora.',
+        htmlReport: ''
+      };
     }
   }
 
@@ -58,20 +60,20 @@
     generateBtn.disabled = true;
     generateBtn.textContent = 'Gerando...';
 
-    summaryEl.textContent = '⌛ Enviando seus dados para o universo...';
+    summaryEl.textContent = '⌛ Processando seu mapa astral...';
     chartEl.innerHTML = '';
     reportEl.innerHTML = '';
     resultSection.classList.remove('hidden');
-    downloadBtn.classList.add('hidden');
 
-    const mensagem = await iniciarGeracaoAssincrona({
-      nome: name,
-      dataNascimento: birthDate,
-      horaNascimento: birthTime,
-      localNascimento: birthPlace
+    const { summary, htmlReport } = await gerarRelatorioHTML({
+      name,
+      birthDate,
+      birthTime,
+      birthPlace
     });
 
-    summaryEl.textContent = mensagem;
+    summaryEl.textContent = summary;
+    reportEl.innerHTML = htmlReport || '<p>⚠️ Relatório indisponível.</p>';
 
     generateBtn.disabled = false;
     generateBtn.textContent = 'Gerar Mapa Astral';
