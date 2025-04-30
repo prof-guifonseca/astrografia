@@ -20,7 +20,7 @@ exports.handler = async (event) => {
     }
 
     const prompt = `
-Você é um astrólogo experiente, com linguagem acessível e poética. Crie um relatório astrológico resumido (4 a 5 páginas) com base nos dados abaixo:
+Você é um astrólogo experiente, com linguagem acessível e poética. Crie um relatório astrológico resumido (2 a 3 páginas) com base nos dados abaixo:
 
 - Nome: ${name}
 - Data de nascimento: ${birthDate}
@@ -48,7 +48,7 @@ Use Markdown e linguagem fluida. Evite termos técnicos. Seja acolhedor.
         { role: 'user', content: prompt }
       ],
       temperature: 0.7,
-      max_tokens: 3000
+      max_tokens: 2000
     });
 
     console.log('[Astrografia] Resposta da OpenAI recebida.');
