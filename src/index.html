@@ -19,21 +19,22 @@
     <p class="subtitle">Descubra os caminhos que o céu escreve para você</p>
   </header>
 
-  <main>
+  <main role="main">
     <!-- Formulário de Dados de Nascimento -->
     <section id="form-section" class="card">
       <h2>Preencha seus dados astrais</h2>
+
       <label for="name">Nome completo</label>
-      <input type="text" id="name" placeholder="Ex: Ana Oliveira">
+      <input type="text" id="name" autocomplete="name" placeholder="Ex: Ana Oliveira">
 
       <label for="birthDate">Data de nascimento</label>
-      <input type="date" id="birthDate">
+      <input type="date" id="birthDate" autocomplete="bday">
 
       <label for="birthTime">Hora de nascimento</label>
-      <input type="time" id="birthTime">
+      <input type="time" id="birthTime" autocomplete="off">
 
       <label for="birthPlace">Local de nascimento</label>
-      <input type="text" id="birthPlace" placeholder="Cidade, Estado">
+      <input type="text" id="birthPlace" autocomplete="address-level2" placeholder="Cidade, Estado">
 
       <button id="generateMap" class="btn">Gerar Mapa Astral</button>
     </section>
@@ -44,7 +45,7 @@
       <p id="summary"></p>
       <div id="chart-container"></div>
       <div id="report-container" class="report-html"></div>
-      <button id="downloadPDF" class="btn">Baixar PDF Completo</button>
+      <button id="downloadPDF" class="btn hidden">Baixar PDF Completo</button>
     </section>
   </main>
 </body>
