@@ -29,10 +29,8 @@ Você é um astrólogo experiente e sensível. Gere um relatório astrológico p
 
 Crie um conteúdo resumido e reflexivo com cerca de 1 página em estilo Markdown. Divida o texto com os seguintes títulos:
 
-## Introdução  
-## Sol, Lua e Ascendente  
-## Temas de Vida  
-## Caminho Pessoal
+## Contextualização   
+## Sol, Lua e Ascendente
 
 Use linguagem fluida e acolhedora, com tom inspirador. **Não inclua imagens, mapas ou gráficos.** Foque apenas em texto.
 `.trim();
@@ -47,7 +45,7 @@ Use linguagem fluida e acolhedora, com tom inspirador. **Não inclua imagens, ma
         { role: 'user', content: prompt }
       ],
       temperature: 0.7,
-      max_tokens: 700
+      max_tokens: 600
     });
 
     console.log('[Astrografia] Resposta da OpenAI recebida.');
