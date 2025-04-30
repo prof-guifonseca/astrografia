@@ -1,4 +1,4 @@
-// Astrografia 🌌 — Núcleo Consolidado v1.3 (2025-04-30)
+// Astrografia 🌌 — Núcleo Consolidado v1.4 (2025-04-30)
 (() => {
   'use strict';
 
@@ -63,6 +63,10 @@
       return;
     }
 
+    // Desabilita botão e exibe carregamento
+    generateBtn.disabled = true;
+    generateBtn.textContent = 'Gerando...';
+
     summaryEl.textContent = '⌛ Gerando seu mapa astral...';
     chartEl.innerHTML = '';
     reportEl.innerHTML = '';
@@ -92,6 +96,10 @@
         URL.revokeObjectURL(url);
       };
     }
+
+    // Reativa botão
+    generateBtn.disabled = false;
+    generateBtn.textContent = 'Gerar Mapa Astral';
   });
 
   // ===== Função auxiliar: converte base64 para Blob =====
