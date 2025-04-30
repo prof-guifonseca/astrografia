@@ -1,16 +1,13 @@
-// Astrografia 🌌 — Núcleo Consolidado v1.4 (2025-04-30)
+// Astrografia 🌌 — Núcleo Consolidado v1.5 (Assíncrono)
 (() => {
   'use strict';
 
-  // ===== Configurações =====
   const API = {
-    generate: '/api/generateMap' // usa redirect configurado no netlify.toml
+    generate: '/.netlify/functions/iniciarGeracaoMapa'
   };
 
-  // ===== Utilitários DOM =====
   const $ = selector => document.querySelector(selector);
 
-  // ===== Elementos =====
   const nameEl        = $('#name');
   const dateEl        = $('#birthDate');
   const timeEl        = $('#birthTime');
@@ -22,8 +19,8 @@
   const downloadBtn   = $('#downloadPDF');
   const reportEl      = $('#report-container');
 
-  // ===== Função principal de requisição =====
-  async function fetchAstroData(userData) {
+  // Envia dados e inicia processo assíncrono
+  async function iniciarGeracaoAssincrona(userData) {
     try {
       const res = await fetch(API.generate, {
         method: 'POST',
@@ -34,24 +31,19 @@
       if (!res.ok) {
         const errorText = await res.text();
         console.error('[Astrografia] Erro HTTP:', res.status, errorText);
-        throw new Error('Erro na requisição');
+        throw new Error('Erro ao iniciar geração');
       }
 
-      const { summary, chartSVG, pdfBase64, htmlReport } = await res.json();
-      return { summary, chartSVG, pdfBase64, htmlReport };
+      const { mensagem } = await res.json();
+      return mensagem || 'Mapa astral em processamento.';
 
     } catch (err) {
-      console.error('[Astrografia] Erro ao gerar mapa astral:', err);
-      return {
-        summary: '⚠️ Não foi possível gerar o mapa astral agora.',
-        chartSVG: '',
-        pdfBase64: '',
-        htmlReport: ''
-      };
+      console.error('[Astrografia] Falha ao iniciar mapa astral:', err);
+      return '⚠️ Não foi possível iniciar a geração do mapa astral.';
     }
   }
 
-  // ===== Evento: clique no botão Gerar Mapa =====
+  // Evento: clique no botão Gerar Mapa
   generateBtn.addEventListener('click', async () => {
     const name = nameEl.value.trim();
     const birthDate = dateEl.value;
@@ -63,55 +55,26 @@
       return;
     }
 
-    // Desabilita botão e exibe carregamento
     generateBtn.disabled = true;
     generateBtn.textContent = 'Gerando...';
 
-    summaryEl.textContent = '⌛ Gerando seu mapa astral...';
+    summaryEl.textContent = '⌛ Enviando seus dados para o universo...';
     chartEl.innerHTML = '';
     reportEl.innerHTML = '';
     resultSection.classList.remove('hidden');
     downloadBtn.classList.add('hidden');
 
-    const { summary, chartSVG, pdfBase64, htmlReport } = await fetchAstroData({
-      name,
-      birthDate,
-      birthTime,
-      birthPlace
+    const mensagem = await iniciarGeracaoAssincrona({
+      nome: name,
+      dataNascimento: birthDate,
+      horaNascimento: birthTime,
+      localNascimento: birthPlace
     });
 
-    summaryEl.textContent = summary || '⚠️ Relatório indisponível.';
-    chartEl.innerHTML = chartSVG || '';
-    reportEl.innerHTML = htmlReport || '<p>⚠️ Relatório indisponível.</p>';
+    summaryEl.textContent = mensagem;
 
-    if (pdfBase64) {
-      downloadBtn.classList.remove('hidden');
-      downloadBtn.onclick = () => {
-        const blob = b64toBlob(pdfBase64, 'application/pdf');
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `relatorio-astrografia-${name}.pdf`;
-        link.click();
-        URL.revokeObjectURL(url);
-      };
-    }
-
-    // Reativa botão
     generateBtn.disabled = false;
     generateBtn.textContent = 'Gerar Mapa Astral';
   });
-
-  // ===== Função auxiliar: converte base64 para Blob =====
-  function b64toBlob(base64, mime = '') {
-    const byteChars = atob(base64);
-    const byteArrays = [];
-    for (let i = 0; i < byteChars.length; i += 512) {
-      const slice = byteChars.slice(i, i + 512);
-      const byteNumbers = new Array(slice.length).fill().map((_, j) => slice.charCodeAt(j));
-      byteArrays.push(new Uint8Array(byteNumbers));
-    }
-    return new Blob(byteArrays, { type: mime });
-  }
 
 })();
