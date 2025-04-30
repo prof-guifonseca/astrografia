@@ -1,4 +1,4 @@
-// Astrografia 🌌 — Núcleo Consolidado v1.7 (HTML direto com gpt-3.5)
+// Astrografia 🌌 — Núcleo Consolidado v1.8 (HTML direto com GPT-4o)
 (() => {
   'use strict';
 
@@ -39,7 +39,7 @@
     } catch (err) {
       console.error('[Astrografia] Erro ao gerar relatório:', err);
       return {
-        summary: '⚠️ Não foi possível gerar o mapa astral agora.',
+        summary: '⚠️ Houve uma falha na geração do mapa astral. Tente novamente mais tarde.',
         htmlReport: ''
       };
     }
@@ -60,7 +60,7 @@
     // Estado de carregamento
     generateBtn.disabled = true;
     generateBtn.textContent = 'Gerando...';
-    summaryEl.textContent = '⌛ Processando seu mapa astral...';
+    summaryEl.textContent = '✨ Conectando com as constelações...';
     chartEl.innerHTML = '';
     reportEl.innerHTML = '';
     resultSection.classList.remove('hidden');
