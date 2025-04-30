@@ -20,7 +20,7 @@ exports.handler = async (event) => {
     }
 
     const prompt = `
-Você é um astrólogo experiente, com linguagem envolvente e acessível. Gere um relatório astrológico completo com cerca de 20 páginas, dividido nas seções abaixo, com base nos seguintes dados:
+Você é um astrólogo experiente, com linguagem envolvente e acessível. Gere um relatório astrológico completo com cerca de 8 páginas, dividido nas seções abaixo, com base nos seguintes dados:
 
 - Nome: ${name}
 - Data de nascimento: ${birthDate}
