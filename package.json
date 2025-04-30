@@ -38,7 +38,7 @@
     "node": ">=18 <22"
   },
   "devDependencies": {
-    "netlify-cli": "^16.1.0",
+    "netlify-cli": "^20.1.1",
     "prettier": "^3.5.3",
     "serve": "^14.2.4"
   },
