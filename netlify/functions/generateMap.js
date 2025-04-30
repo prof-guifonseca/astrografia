@@ -1,8 +1,11 @@
+require('dotenv').config(); // habilita leitura de .env local (ignorado em produção)
 const { OpenAI } = require('openai');
 const { marked } = require('marked');
 const puppeteer = require('puppeteer');
 
-const openai = new OpenAI();
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
 exports.handler = async (event) => {
   try {
@@ -41,17 +44,22 @@ Evite termos técnicos excessivos. Use linguagem fluida e humanizada. Retorne to
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
-        { role: 'system', content: 'Você é um astrólogo experiente e sensível, especialista em relatórios completos.' },
+        {
+          role: 'system',
+          content: 'Você é um astrólogo experiente e sensível, especialista em relatórios completos.'
+        },
         { role: 'user', content: prompt }
       ],
       temperature: 0.8,
-      max_tokens: 10000
+      max_tokens: 50000
     });
 
-    const fullReport = response.choices[0].message.content;
+    console.log('[Astrografia] Resposta da OpenAI recebida.');
+    console.log('[Astrografia] Tokens utilizados:', response?.usage?.total_tokens || 'n/d');
+
+    const fullReport = response?.choices?.[0]?.message?.content || '⚠️ Não foi possível gerar o relatório.';
     const htmlContent = marked.parse(fullReport);
 
-    // Template básico com estilo
     const htmlWrapper = `
       <html>
         <head>
@@ -80,14 +88,12 @@ Evite termos técnicos excessivos. Use linguagem fluida e humanizada. Retorne to
       </html>
     `;
 
-    // Gera o PDF com Puppeteer
     const browser = await puppeteer.launch({ headless: 'new' });
     const page = await browser.newPage();
     await page.setContent(htmlWrapper, { waitUntil: 'load' });
     const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
     await browser.close();
 
-    // Codifica o PDF em base64 para download no frontend
     const pdfBase64 = pdfBuffer.toString('base64');
 
     return {
@@ -95,7 +101,7 @@ Evite termos técnicos excessivos. Use linguagem fluida e humanizada. Retorne to
       body: JSON.stringify({
         summary: "Relatório gerado com sucesso.",
         fullReport,
-        pdfBase64 // você pode baixar ou converter para Blob no frontend
+        pdfBase64
       })
     };
 
