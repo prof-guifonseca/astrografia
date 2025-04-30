@@ -1,29 +1,31 @@
 {
-  "name": "godcares",
-  "version": "2.0.0",
-  "description": "GodCares ✝️ — PWA de autocuidado espiritual: versículos e reflexões bíblicas diárias (Functions + Offline)",
+  "name": "astrografia",
+  "version": "1.0.0",
+  "description": "Astrografia 🌌 — Gere mapas astrais em PDF com interpretação personalizada via IA. PWA moderno com backend serverless e visual editorial.",
   "type": "module",
   "author": "Guilherme Fonseca",
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "https://github.com/prof-guifonseca/self-care.git"
+    "url": "https://github.com/seu-usuario/astrografia.git"
   },
   "bugs": {
-    "url": "https://github.com/prof-guifonseca/self-care/issues"
+    "url": "https://github.com/seu-usuario/astrografia/issues"
   },
-  "homepage": "https://seu-site.netlify.app",
+  "homepage": "https://astrografia.netlify.app",
   "keywords": [
-    "godcares",
-    "selfcare",
+    "astrologia",
+    "mapa astral",
+    "astrografia",
+    "pdf",
+    "openai",
+    "gpt-4o",
+    "netlify",
+    "puppeteer",
     "PWA",
-    "Netlify",
-    "Espiritualidade",
-    "Reflexões",
-    "Versículos",
-    "Autocuidado",
-    "offline-first",
-    "bíblia"
+    "interpretação astrológica",
+    "markdown",
+    "serverless"
   ],
   "scripts": {
     "dev": "netlify dev --port 8888",
@@ -36,11 +38,14 @@
     "node": ">=18 <22"
   },
   "devDependencies": {
-    "netlify-cli": "^20.1.1",
+    "netlify-cli": "^16.1.0",
     "prettier": "^3.5.3",
     "serve": "^14.2.4"
   },
   "dependencies": {
-    "openai": "^4.96.0"
+    "dotenv": "^16.5.0",
+    "marked": "^15.0.11",
+    "openai": "^4.96.2",
+    "puppeteer": "^24.7.2"
   }
 }

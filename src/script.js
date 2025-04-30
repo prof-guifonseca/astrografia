@@ -1,98 +1,85 @@
-// GodCares ✝️ — Core Modularizado v2.2 (2025-04-28)
+// Astrografia 🌌 — Núcleo Consolidado v1.1 (2025-04-30)
 (() => {
   'use strict';
 
   // ===== Configurações =====
   const API = {
-    suggestion: '/.netlify/functions/suggestion'
+    generate: '/.netlify/functions/generateMap'
   };
-  const STORAGE_KEY = 'godcares_history';
-  const MAX_HISTORY = 20;
 
   // ===== Utilitários DOM =====
   const $ = selector => document.querySelector(selector);
 
   // ===== Elementos =====
-  const entryEl        = $('#entry');
-  const receiveBtn     = $('#receiveWord');
-  const wordSection    = $('#word-section');
-  const verseEl        = $('#verse');
-  const contextEl      = $('#context');
-  const applicationEl  = $('#application');
-  const historySection = $('#history-section');
-  const historyList    = $('#history-list');
+  const nameEl        = $('#name');
+  const dateEl        = $('#birthDate');
+  const timeEl        = $('#birthTime');
+  const placeEl       = $('#birthPlace');
+  const generateBtn   = $('#generateMap');
+  const resultSection = $('#result-section');
+  const summaryEl     = $('#summary');
+  const chartEl       = $('#chart-container');
+  const downloadBtn   = $('#downloadPDF');
 
-  // ===== Funções Principais =====
-  async function fetchWord(entryText) {
+  // ===== Função principal de requisição =====
+  async function fetchAstroData(userData) {
     try {
-      const res = await fetch(API.suggestion, {
+      const res = await fetch(API.generate, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entryText })
+        body: JSON.stringify(userData)
       });
+
       if (!res.ok) throw new Error();
-      const { verse, context, application } = await res.json();
-      return { verse, context, application };
+      const { summary, chartSVG, pdfBase64 } = await res.json();
+
+      return { summary, chartSVG, pdfBase64 };
     } catch (err) {
-      console.error('[GodCares] Erro ao buscar Palavra:', err);
+      console.error('[Astrografia] Erro ao gerar mapa astral:', err);
       return {
-        verse: '⚠️ Não foi possível gerar uma Palavra agora.',
-        context: '',
-        application: 'Tente novamente em alguns instantes.'
+        summary: '⚠️ Não foi possível gerar o mapa astral agora.',
+        chartSVG: '',
+        pdfBase64: ''
       };
     }
   }
 
-  function saveHistory(verse, context, application) {
-    const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    history.unshift({ verse, context, application, time: Date.now() });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(0, MAX_HISTORY)));
-  }
+  // ===== Evento: clique no botão Gerar Mapa =====
+  generateBtn.addEventListener('click', async () => {
+    const name = nameEl.value.trim();
+    const birthDate = dateEl.value;
+    const birthTime = timeEl.value;
+    const birthPlace = placeEl.value.trim();
 
-  function renderHistory() {
-    const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    if (history.length === 0) {
-      historySection.classList.add('hidden');
+    if (!name || !birthDate || !birthTime || !birthPlace) {
+      alert('Por favor, preencha todos os campos.');
       return;
     }
-    historySection.classList.remove('hidden');
-    historyList.innerHTML = '';
-    history.forEach(({ verse, time }) => {
-      const li = document.createElement('li');
-      li.innerHTML = `<strong>${new Date(time).toLocaleDateString('pt-BR')}</strong>: ${verse}`;
-      historyList.appendChild(li);
+
+    summaryEl.textContent = '⌛ Gerando seu mapa astral...';
+    chartEl.innerHTML = '';
+    resultSection.classList.remove('hidden');
+    downloadBtn.classList.add('hidden');
+
+    const { summary, chartSVG, pdfBase64 } = await fetchAstroData({
+      name,
+      birthDate,
+      birthTime,
+      birthPlace
     });
-  }
 
-  // ===== Eventos =====
-  receiveBtn.addEventListener('click', async () => {
-    const text = entryEl.value.trim();
-    if (!text) return;
+    summaryEl.textContent = summary || '⚠️ Relatório indisponível.';
+    chartEl.innerHTML = chartSVG || '';
 
-    verseEl.textContent = "⌛ Buscando uma Palavra de Esperança...";
-    contextEl.textContent = "";
-    applicationEl.textContent = "";
-    wordSection.classList.remove('hidden');
-
-    const { verse, context, application } = await fetchWord(text);
-
-    verseEl.textContent = `📖 ${verse}`;
-    contextEl.textContent = context;
-    applicationEl.textContent = application;
-
-    verseEl.classList.add('fade-in');
-    contextEl.classList.add('fade-in');
-    applicationEl.classList.add('fade-in');
-
-    saveHistory(verse, context, application);
-    renderHistory();
-
-    entryEl.value = '';
-  });
-
-  // ===== Inicialização =====
-  window.addEventListener('load', () => {
-    renderHistory();
+    if (pdfBase64) {
+      downloadBtn.classList.remove('hidden');
+      downloadBtn.onclick = () => {
+        const link = document.createElement('a');
+        link.href = 'data:application/pdf;base64,' + pdfBase64;
+        link.download = `relatorio-astrografia-${name}.pdf`;
+        link.click();
+      };
+    }
   });
 
 })();

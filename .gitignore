@@ -1,8 +1,8 @@
 ########################
-#  DEPENDÊNCIAS
+# DEPENDÊNCIAS
 ########################
 node_modules/
-package-lock.json.*        # se usar pnpm / npm-lock em múltiplas versões
+package-lock.json.*
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -10,15 +10,15 @@ pnpm-debug.log*
 lerna-debug.log*
 
 ########################
-#  BUILDS / BUNDLES
+# BUILDS / BUNDLES
 ########################
 dist/
 build/
 coverage/
-*.tgz                      # pacotes gerados por `npm pack`
+*.tgz
 
 ########################
-#  CACHES
+# CACHES
 ########################
 .cache/
 .next/
@@ -31,18 +31,19 @@ playwright/.cache/
 cypress/.cache/
 
 ########################
-#  AMBIENTE
+# AMBIENTE / SEGURANÇA
 ########################
-.env*
-!.env.example              # mantém apenas o modelo
+.env
+.env.*
+!.env.example
 
 ########################
-#  NETLIFY
+# NETLIFY
 ########################
 .netlify/
 
 ########################
-#  SISTEMA OPERACIONAL / IDEs
+# SISTEMA OPERACIONAL / IDEs
 ########################
 .DS_Store
 Thumbs.db
@@ -53,7 +54,7 @@ Thumbs.db
 *.bak
 
 ########################
-#  LOGS / TESTES
+# LOGS / TESTES
 ########################
 logs/
 *.log
@@ -62,9 +63,7 @@ test-results/
 jest*.log
 
 ########################
-#  OUTROS (opcionais)
+# OUTROS (opcionais)
 ########################
-# snapshots de Storybook ou Jest:
 __snapshots__/
-# arquivos de lock antigos:
 npm-shrinkwrap.json

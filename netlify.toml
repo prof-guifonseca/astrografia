@@ -1,4 +1,4 @@
-# netlify.toml — SelfCare ✝️ (2025-04-28)
+# netlify.toml — Astrografia 🌌 (2025-04-30)
 # -----------------------------------------------
 # Configurações de Build e Functions
 # Site:      arquivos estáticos em /src
@@ -11,6 +11,7 @@
 
 [functions]
   node_bundler = "esbuild"  # Suporte a import/export modernos
+  included_files = ["utils/**"]
 
 [[redirects]]
   from = "/api/*"

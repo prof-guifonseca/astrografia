@@ -1,6 +1,6 @@
 /*==================================================
-  GodCares ✝️ — Palavras de Esperança (v2.2, 2025-04-28)
-  • Visual fluido, acolhedor e premium
+  Astrografia 🌌 — Mapa Astral Personalizado
+  • Estilo elegante, responsivo e editorial
   • Dark-mode otimizado
   • Tipografia: Inter
 ==================================================*/
@@ -99,6 +99,31 @@ main {
   color: var(--primary-2);
 }
 
+/*—— Campos de Entrada ———————————————————————*/
+input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  margin-top: 0.25rem;
+  background: var(--accent-2);
+  border: 2px solid transparent;
+  border-radius: calc(var(--radius) - 0.25rem);
+  font-size: 1rem;
+  color: var(--text);
+  transition: background 0.3s, border-color 0.3s;
+}
+input:focus {
+  background: #fff;
+  border-color: var(--primary);
+  outline: none;
+}
+label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
 /*—— Botão Principal ———————————————————————————*/
 .btn {
   align-self: center;
@@ -121,70 +146,26 @@ main {
   transform: scale(0.96);
 }
 
-/*—— Textarea ————————————————————————————*/
-textarea {
-  width: 100%;
-  min-height: 120px;
-  padding: 0.75rem 1rem;
-  background: var(--accent-2);
-  border: 2px solid transparent;
-  border-radius: calc(var(--radius) - 0.25rem);
+/*—— Preview do Relatório ———————————————————————*/
+.report-html {
   font-size: 1rem;
+  line-height: 1.8;
   color: var(--text);
-  resize: vertical;
-  transition: background 0.3s, border-color 0.3s;
+  padding: 1rem 0;
 }
-textarea:focus {
-  background: #fff;
-  border-color: var(--primary);
-  outline: none;
-}
-
-/*—— Versículo e Reflexão ———————————————————————*/
-.verse {
-  font-size: 1.1rem;
+.report-html h2 {
+  font-size: 1.4rem;
   font-weight: 600;
   color: var(--primary-2);
-  text-align: center;
-  margin-bottom: 0.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
 }
-.context,
-.application {
-  font-size: 1rem;
-  color: var(--muted);
-  text-align: justify;
+.report-html p {
   margin-bottom: 1rem;
+  text-align: justify;
 }
-
-/*—— Lista de Histórico —————————————————————————*/
-#history-list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  max-height: 12rem;
-  overflow-y: auto;
-  padding-right: 0.25rem;
-}
-#history-list li {
-  background: var(--accent-2);
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  box-shadow: var(--shadow);
-  font-size: 0.9rem;
-  display: flex;
-  justify-content: space-between;
-}
-#history-list li span:last-child {
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-
-/* Scrollbar personalizada */
-#history-list::-webkit-scrollbar { width: 6px; }
-#history-list::-webkit-scrollbar-thumb {
-  background: var(--accent);
-  border-radius: 3px;
+.report-html strong {
+  color: var(--primary);
 }
 
 /*—— Animações —————————————————————————————*/
