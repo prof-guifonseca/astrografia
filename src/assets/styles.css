@@ -1,12 +1,9 @@
-/*==================================================
-  Astrografia 🌌 — Mapa Astral Personalizado
-  • Estilo elegante, responsivo e editorial
-  • Dark-mode otimizado
-  • Tipografia: Inter
-==================================================*/
+/* Astrografia 🌌 – Estilo principal */
+/* Tipografia: Inter • Dark-mode otimizado • Visual editorial */
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&display=swap');
 
-/*—— Paleta de Cores ———————————————————————————*/
+/*— Paleta de Cores —*/
 :root {
   --bg:         #F6F9FF;
   --bg-grad:    linear-gradient(180deg, #F9FBFF 0%, #EDEFF7 100%);
@@ -38,7 +35,7 @@
   }
 }
 
-/*—— Reset e Base ———————————————————————————*/
+/*— Reset & Base —*/
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
@@ -53,7 +50,7 @@ body {
   padding: 2rem 1rem 4rem;
 }
 
-/*—— Layout Principal ———————————————————————————*/
+/*— Layout —*/
 main {
   width: 100%;
   max-width: 600px;
@@ -62,7 +59,7 @@ main {
   gap: 2rem;
 }
 
-/*—— Cabeçalho ———————————————————————————————*/
+/*— Cabeçalho —*/
 .app-header {
   text-align: center;
   margin-bottom: 1.5rem;
@@ -78,7 +75,7 @@ main {
   margin-top: 0.5rem;
 }
 
-/*—— Cartões ————————————————————————————————*/
+/*— Cartões —*/
 .card {
   background: var(--card);
   border-radius: var(--radius);
@@ -99,7 +96,7 @@ main {
   color: var(--primary-2);
 }
 
-/*—— Campos de Entrada ———————————————————————*/
+/*— Campos de Entrada —*/
 input {
   width: 100%;
   padding: 0.75rem 1rem;
@@ -124,7 +121,7 @@ label {
   display: block;
 }
 
-/*—— Botão Principal ———————————————————————————*/
+/*— Botões —*/
 .btn {
   align-self: center;
   padding: 0.75rem 1.5rem;
@@ -152,7 +149,7 @@ label {
   opacity: 0.7;
 }
 
-/*—— Preview do Relatório ———————————————————————*/
+/*— Relatório HTML —*/
 .report-html {
   font-size: 1rem;
   line-height: 1.8;
@@ -174,12 +171,12 @@ label {
   color: var(--primary);
 }
 
-/*—— Utilitários —————————————————————————————*/
+/*— Utilitários —*/
 .hidden {
   display: none !important;
 }
 
-/*—— Animações —————————————————————————————*/
+/*— Animação leve —*/
 .fade-in {
   animation: fadeInSuggestion 0.6s ease both;
 }
@@ -188,8 +185,44 @@ label {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/*—— Responsividade —————————————————————————*/
+/*— Responsivo —*/
 @media (min-width: 768px) {
   .card { padding: 2.5rem; }
   .app-header h1 { font-size: 3rem; }
+}
+
+/*— Impressão —*/
+@media print {
+  body {
+    background: white;
+    color: black;
+    box-shadow: none;
+    font-size: 11pt;
+    padding: 0;
+  }
+
+  .app-header,
+  #form-section,
+  #generateMap,
+  #printReport {
+    display: none !important;
+  }
+
+  .card {
+    box-shadow: none;
+    padding: 0;
+    background: white;
+  }
+
+  .report-html {
+    padding: 0;
+  }
+
+  .report-html h2 {
+    page-break-before: always;
+  }
+
+  .hidden {
+    display: block !important;
+  }
 }
