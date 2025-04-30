@@ -1,4 +1,5 @@
-require('dotenv').config(); // habilita leitura de .env local (ignorado em produção)
+require('dotenv').config(); // habilita leitura do .env local em desenvolvimento
+
 const { OpenAI } = require('openai');
 const { marked } = require('marked');
 const puppeteer = require('puppeteer');
