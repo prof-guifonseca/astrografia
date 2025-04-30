@@ -1,6 +1,6 @@
 {
   "functions": {
-    "api/generateMap.js": {
+    "api/generateMap": {
       "memory": 1024,
       "maxDuration": 60
     }
