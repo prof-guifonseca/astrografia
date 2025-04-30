@@ -32,7 +32,6 @@ Crie um conteúdo resumido e reflexivo com cerca de 1 a 2 páginas em estilo Mar
 ## Introdução  
 ## Sol, Lua e Ascendente  
 ## Temas de Vida  
-## Relações e Emoções  
 ## Caminho Pessoal
 
 Use linguagem fluida e acolhedora, com tom inspirador. **Não inclua imagens, mapas ou gráficos.** Foque apenas em texto.
@@ -48,7 +47,7 @@ Use linguagem fluida e acolhedora, com tom inspirador. **Não inclua imagens, ma
         { role: 'user', content: prompt }
       ],
       temperature: 0.7,
-      max_tokens: 1600
+      max_tokens: 1000
     });
 
     console.log('[Astrografia] Resposta da OpenAI recebida.');
