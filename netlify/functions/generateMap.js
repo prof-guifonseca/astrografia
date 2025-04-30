@@ -52,7 +52,7 @@ Evite termos técnicos excessivos. Use linguagem fluida e humanizada. Retorne to
         { role: 'user', content: prompt }
       ],
       temperature: 0.8,
-      max_tokens: 50000
+      max_tokens: 16000
     });
 
     console.log('[Astrografia] Resposta da OpenAI recebida.');
