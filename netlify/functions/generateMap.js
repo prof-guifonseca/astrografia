@@ -27,7 +27,7 @@ Você é um astrólogo experiente e sensível. Gere um relatório astrológico p
 - Hora: ${birthTime}
 - Local: ${birthPlace}
 
-Crie um conteúdo resumido e reflexivo com cerca de 1 a 2 páginas em estilo Markdown. Divida o texto com os seguintes títulos:
+Crie um conteúdo resumido e reflexivo com cerca de 1 página em estilo Markdown. Divida o texto com os seguintes títulos:
 
 ## Introdução  
 ## Sol, Lua e Ascendente  
@@ -47,7 +47,7 @@ Use linguagem fluida e acolhedora, com tom inspirador. **Não inclua imagens, ma
         { role: 'user', content: prompt }
       ],
       temperature: 0.7,
-      max_tokens: 1000
+      max_tokens: 700
     });
 
     console.log('[Astrografia] Resposta da OpenAI recebida.');
