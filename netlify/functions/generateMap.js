@@ -1,4 +1,4 @@
-require('dotenv').config(); // apenas para uso local
+require('dotenv').config();
 
 const { OpenAI } = require('openai');
 const { marked } = require('marked');
@@ -20,14 +20,14 @@ exports.handler = async (event) => {
     }
 
     const prompt = `
-Você é um astrólogo experiente, com linguagem acessível e poética. Crie um relatório astrológico resumido (2 a 3 páginas) com base nos dados abaixo:
+Você é um astrólogo experiente e sensível. Gere um relatório astrológico personalizado com base nos seguintes dados:
 
 - Nome: ${name}
 - Data de nascimento: ${birthDate}
 - Hora: ${birthTime}
 - Local: ${birthPlace}
 
-Divida o conteúdo nas seções:
+Crie um conteúdo resumido e reflexivo com cerca de 2 a 3 páginas em estilo Markdown. Divida o texto com os seguintes títulos:
 
 ## Introdução  
 ## Sol, Lua e Ascendente  
@@ -35,11 +35,11 @@ Divida o conteúdo nas seções:
 ## Relações e Emoções  
 ## Caminho Pessoal
 
-Use Markdown e linguagem fluida. Evite termos técnicos. Seja acolhedor.
-    `.trim();
+Use linguagem fluida e acolhedora, com tom inspirador. **Não inclua imagens, mapas ou gráficos.** Foque apenas em texto.
+`.trim();
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4o',
       messages: [
         {
           role: 'system',
@@ -48,7 +48,7 @@ Use Markdown e linguagem fluida. Evite termos técnicos. Seja acolhedor.
         { role: 'user', content: prompt }
       ],
       temperature: 0.7,
-      max_tokens: 2000
+      max_tokens: 3000
     });
 
     console.log('[Astrografia] Resposta da OpenAI recebida.');
