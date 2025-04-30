@@ -29,7 +29,6 @@ Você é um astrólogo experiente e sensível. Gere um relatório astrológico p
 
 Crie um conteúdo resumido e reflexivo com cerca de 1 página em estilo Markdown. Divida o texto com os seguintes títulos:
 
-## Contextualização   
 ## Sol, Lua e Ascendente
 
 Use linguagem fluida e acolhedora, com tom inspirador. **Não inclua imagens, mapas ou gráficos.** Foque apenas em texto.
