@@ -20,7 +20,7 @@ exports.handler = async (event) => {
     }
 
     const prompt = `
-Você é um astrólogo experiente, com linguagem envolvente e acessível. Gere um relatório astrológico completo com cerca de 2-3 páginas, dividido nas seções abaixo, com base nos seguintes dados:
+Você é um astrólogo experiente, com linguagem envolvente e acessível. Gere um relatório astrológico completo com cerca de 2 páginas, dividido nas seções abaixo, com base nos seguintes dados:
 
 - Nome: ${name}
 - Data de nascimento: ${birthDate}
@@ -29,8 +29,8 @@ Você é um astrólogo experiente, com linguagem envolvente e acessível. Gere u
 
 O relatório deve conter:
 
-1. Introdução personalizada
-2. Interpretação do Sol, Lua e Ascendente
+1. Introdução
+2. Sol, Lua e Ascendente
 3. Vida afetiva
 4. Vida profissional
 5. Desafios
@@ -49,7 +49,7 @@ Evite termos técnicos excessivos. Use linguagem fluida e humanizada. Retorne to
         { role: 'user', content: prompt }
       ],
       temperature: 0.8,
-      max_tokens: 3000
+      max_tokens: 1500
     });
 
     console.log('[Astrografia] Resposta da OpenAI recebida.');
