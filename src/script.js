@@ -1,4 +1,4 @@
-// Astrografia 🌌 — Núcleo Consolidado v1.6 (HTML direto)
+// Astrografia 🌌 — Núcleo Consolidado v1.7 (HTML direto com gpt-3.5)
 (() => {
   'use strict';
 
@@ -18,7 +18,7 @@
   const chartEl       = $('#chart-container');
   const reportEl      = $('#report-container');
 
-  // Chamada ao backend que retorna o HTML interpretado
+  // Requisição ao backend que retorna HTML interpretado
   async function gerarRelatorioHTML(userData) {
     try {
       const res = await fetch(API.generate, {
@@ -30,14 +30,14 @@
       if (!res.ok) {
         const errorText = await res.text();
         console.error('[Astrografia] Erro HTTP:', res.status, errorText);
-        throw new Error('Erro ao gerar relatório');
+        throw new Error('Erro na requisição');
       }
 
       const { summary, htmlReport } = await res.json();
       return { summary, htmlReport };
 
     } catch (err) {
-      console.error('[Astrografia] Falha na geração do relatório:', err);
+      console.error('[Astrografia] Erro ao gerar relatório:', err);
       return {
         summary: '⚠️ Não foi possível gerar o mapa astral agora.',
         htmlReport: ''
@@ -45,7 +45,7 @@
     }
   }
 
-  // Evento: clique no botão Gerar Mapa
+  // Evento: clique no botão "Gerar Mapa Astral"
   generateBtn.addEventListener('click', async () => {
     const name = nameEl.value.trim();
     const birthDate = dateEl.value;
@@ -57,14 +57,15 @@
       return;
     }
 
+    // Estado de carregamento
     generateBtn.disabled = true;
     generateBtn.textContent = 'Gerando...';
-
     summaryEl.textContent = '⌛ Processando seu mapa astral...';
     chartEl.innerHTML = '';
     reportEl.innerHTML = '';
     resultSection.classList.remove('hidden');
 
+    // Gera o relatório
     const { summary, htmlReport } = await gerarRelatorioHTML({
       name,
       birthDate,
@@ -78,5 +79,4 @@
     generateBtn.disabled = false;
     generateBtn.textContent = 'Gerar Mapa Astral';
   });
-
 })();
