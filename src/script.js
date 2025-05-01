@@ -1,4 +1,4 @@
-// Astrografia 🌌 — Núcleo Consolidado v3.1 (JS compatível + GPT-only)
+// Astrografia 🌌 — Núcleo Consolidado v3.2 (preciso + discreto)
 (() => {
   'use strict';
 
@@ -40,7 +40,7 @@
     }
   }
 
-  // 🚀 Consulta à função Netlify que usa GPT
+  // 🚀 Requisição ao backend
   async function obterPosicoesPlanetarias(userData) {
     try {
       const res = await fetch(API.generate, {
@@ -56,7 +56,7 @@
     }
   }
 
-  // 🌌 Renderiza as posições planetárias
+  // 🌌 Renderização das posições celestes
   function exibirPlanetas(planets = [], ascendant = null) {
     chartEl.innerHTML = '<h3 class="fade-in">🔭 Posições Celestes</h3>';
 
@@ -75,8 +75,9 @@
     }
 
     planets.forEach(p => {
+      const grau = typeof p.degree === 'number' ? `${p.degree.toFixed(1)}°` : '?°';
       const li = document.createElement('li');
-      li.textContent = `${p.icon || '🔹'} ${p.name}: ${p.sign} ${Number(p.signDegree).toFixed(1)}°`;
+      li.textContent = `${p.icon || '🔹'} ${p.name}: ${p.sign} ${grau}`;
       ul.appendChild(li);
     });
 
@@ -99,8 +100,8 @@
 
     const btn = $('#generateMap');
     btn.disabled = true;
-    btn.textContent = '⌛ Consultando...';
-    summaryEl.textContent = 'Gerando mapa com base no GPT...';
+    btn.textContent = '⌛ Gerando...';
+    summaryEl.textContent = 'Aguarde, consultando as posições com precisão...';
     chartEl.innerHTML = '';
     reportEl.innerHTML = '';
     resultSection.classList.remove('hidden');
@@ -118,7 +119,7 @@
     btn.textContent = 'Obter Mapa Astral';
   });
 
-  // 📖 Evento: clique nos botões temáticos
+  // 📖 Evento: clique em relatório temático
   document.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-topic]');
     if (!btn || !dadosGerados) return;

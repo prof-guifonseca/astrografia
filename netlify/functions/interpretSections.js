@@ -2,7 +2,6 @@ require('dotenv').config();
 const { OpenAI } = require('openai');
 const { marked } = require('marked');
 
-// 🔑 Inicialização segura do cliente OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
@@ -17,7 +16,7 @@ const TEMAS = {
   desafios:        'desafios e bloqueios pessoais'
 };
 
-// 🚀 Função Netlify principal
+// 🚀 Função principal Netlify
 exports.handler = async function(event) {
   try {
     const { tema, planetas, nome, ascendant } = JSON.parse(event.body || '{}');
@@ -32,28 +31,33 @@ exports.handler = async function(event) {
     const foco = TEMAS[tema];
     const nomeLimpo = (nome || 'a pessoa').replace(/[^À-ſ\w \-']/gu, '').trim();
 
+    // 🌌 Composição do mapa astral para o prompt
     const mapa = planetas
-      .map(p => `${p.name} em ${p.sign} (${p.signDegree}°)`)
+      .map(p => {
+        const grau = typeof p.degree === 'number' ? `${p.degree.toFixed(1)}°` : '?°';
+        return `${p.icon || '🔹'} ${p.name} em ${p.sign} (${grau})`;
+      })
       .join(', ');
 
     const ascText = ascendant
-      ? `Ascendente em ${ascendant.sign} (${ascendant.degree}°)`
+      ? `Ascendente em ${ascendant.sign} (${typeof ascendant.degree === 'number' ? ascendant.degree.toFixed(1) : '?'}°)`
       : '';
 
+    // 🧠 Prompt bem formatado
     const prompt = `
-Você é um astrólogo experiente, sensível e responsável. Com base nas posições astrológicas a seguir, escreva um parágrafo interpretando a temática de "${foco}" para ${nomeLimpo}.
+Você é um astrólogo experiente, sensível e responsável. Com base nas posições astrológicas abaixo, escreva um parágrafo interpretando o tema "${foco}" para ${nomeLimpo}.
 
 Padrões astrais:
 ${mapa}
 ${ascText ? '\n' + ascText : ''}
 
-• Utilize linguagem acolhedora, motivadora e clara.
-• Não use jargões técnicos como "quadratura" ou "trígono".
-• Evite clichês esotéricos e generalizações óbvias.
-• Mencione o Ascendente como marcador de estilo pessoal, se estiver presente.
-• Responda exclusivamente em Markdown (1 parágrafo, sem listas).
+• Use linguagem acolhedora, clara e motivadora.
+• Não use termos técnicos como "quadratura", "casa", "aspecto", etc.
+• Evite clichês esotéricos e frases genéricas.
+• Mencione o Ascendente como estilo pessoal, se presente.
+• Responda em **1 parágrafo em Markdown** (sem listas).
 
-Seja útil, coerente e centrado no contexto astral apresentado.
+Seja objetivo, centrado no contexto astral apresentado, e útil para a reflexão pessoal.
     `.trim();
 
     const response = await openai.chat.completions.create({
@@ -61,7 +65,7 @@ Seja útil, coerente e centrado no contexto astral apresentado.
       messages: [
         {
           role: 'system',
-          content: 'Você é um astrólogo profissional que escreve com sensibilidade, precisão e respeito pelo simbolismo astrológico.'
+          content: 'Você é um astrólogo profissional que escreve com sensibilidade, precisão e respeito ao simbolismo astrológico.'
         },
         { role: 'user', content: prompt }
       ],

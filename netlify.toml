@@ -10,6 +10,7 @@
     "openai",
     "node-fetch"
   ]
+  included_files = ["node_modules/openai/**", "node_modules/marked/**"]
 
 [[redirects]]
   from = "/api/*"

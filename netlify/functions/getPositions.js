@@ -16,29 +16,55 @@ async function obterCoordenadas(local) {
 
 function formatarPrompt({ birthDate, birthTime, birthPlace, lat, lng }) {
   return `
-Você é um astrólogo profissional com acesso a efemérides reais. Gere as posições dos principais planetas (Sol, Lua, Mercúrio, Vênus, Marte, Júpiter, Saturno, Urano, Netuno) e o Ascendente, com base na data, hora e local de nascimento a seguir. Use o modelo JSON com o mesmo formato exato abaixo. Assegure que os graus da **Lua** e do **Ascendente** estejam corretos com base na astrologia tradicional (sideral ou tropical), pois esses dois dados são sensíveis e precisam refletir precisão próxima de serviços como AstroSeek, Personare ou Astrodienst.
+Você é um astrólogo profissional com acesso a efemérides reais. Calcule e retorne as posições dos seguintes astros para o mapa astral da pessoa:
 
-Modelo de saída:
+- Sol, Lua, Mercúrio, Vênus, Marte, Júpiter, Saturno, Urano, Netuno
+- Ascendente (com base na latitude, longitude e hora local)
+
+Cada planeta deve conter:
+• name (exato, com inicial maiúscula)
+• sign (nome completo do signo)
+• degree (grau decimal entre 0.0 e 29.99)
+• icon (símbolo unicode oficial do planeta)
+
+O Ascendente deve conter:
+• sign
+• degree (grau decimal)
+
+Use astrologia tropical (não sideral).
+
+⚠️ Muito importante:
+• Todos os graus devem ser números válidos (ex: 12.7), sem palavras, letras ou símbolos
+• Lua e Ascendente devem refletir efemérides reais (precisão próxima a AstroSeek/Personare)
+• A resposta deve ser um único JSON, entre \`\`\`json e \`\`\`
+
+Modelo esperado:
+\`\`\`json
 {
   "planets": [
-    { "name": "Sol", "sign": "Capricórnio", "degree": 10.2 },
+    { "name": "Sol", "sign": "Capricórnio", "degree": 10.2, "icon": "☀️" },
+    { "name": "Lua", "sign": "Touro", "degree": 18.4, "icon": "🌙" }
     ...
   ],
-  "ascendant": { "sign": "Aquário", "degree": 5.1 }
+  "ascendant": {
+    "sign": "Aquário",
+    "degree": 5.1
+  }
 }
+\`\`\`
 
-Dados:
+Informações da pessoa:
 - Data: ${birthDate}
 - Hora: ${birthTime}
 - Local: ${birthPlace}
 - Latitude: ${lat}
 - Longitude: ${lng}
 
-Retorne apenas o JSON, entre blocos \`\`\`json.
+Retorne apenas o JSON no bloco indicado. Sem explicações.
   `.trim();
 }
 
-exports.handler = async function(event) {
+exports.handler = async function (event) {
   try {
     const { birthDate, birthTime, birthPlace } = JSON.parse(event.body || '{}');
 
@@ -62,7 +88,7 @@ exports.handler = async function(event) {
         { role: 'user', content: prompt }
       ],
       temperature: 0.2,
-      max_tokens: 600
+      max_tokens: 800
     });
 
     const raw = completion.choices?.[0]?.message?.content || '';
