@@ -2,10 +2,10 @@ import 'dotenv/config';
 import { OpenAI } from 'openai';
 import { marked } from 'marked';
 
-// 🔑 Inicializa o cliente da OpenAI
+// 🔑 Cliente OpenAI inicializado com chave de ambiente
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// 🎯 Tópicos aceitos
+// 🎯 Tópicos temáticos permitidos
 const TEMAS = {
   amor:            'vida amorosa',
   carreira:        'vida profissional',
@@ -15,12 +15,12 @@ const TEMAS = {
   desafios:        'desafios e bloqueios pessoais'
 };
 
-// 🚀 Função principal para interpretação temática
+// 🚀 Função serverless principal
 export async function handler(event) {
   try {
     const { tema, planetas, nome, ascendant } = JSON.parse(event.body || '{}');
 
-    // 🔎 Validação
+    // 🛑 Validação básica
     if (!TEMAS[tema] || !Array.isArray(planetas)) {
       return {
         statusCode: 400,
@@ -29,7 +29,9 @@ export async function handler(event) {
     }
 
     const foco = TEMAS[tema];
-    const nomeLimpo = (nome || 'a pessoa').replace(/[^À-ſ\w \-']/gu, '').trim();
+    const nomeLimpo = (nome || 'a pessoa')
+      .replace(/[^À-ſ\w \-']/gu, '')
+      .trim();
 
     const mapa = planetas
       .map(p => `${p.name} em ${p.sign} (${p.signDegree}°)`)
@@ -39,6 +41,7 @@ export async function handler(event) {
       ? `Ascendente em ${ascendant.sign} (${ascendant.degree}°).`
       : '';
 
+    // 🧠 Prompt personalizado
     const prompt = `
 Você é um astrólogo experiente. Com base nas posições planetárias abaixo, escreva um texto breve (1 parágrafo) sobre ${foco} para ${nomeLimpo}:
 
@@ -48,6 +51,7 @@ ${ascText}
 Use linguagem acolhedora, objetiva, inspiradora e sem termos técnicos. Seja sensível, otimista e claro. Responda em Markdown.
     `.trim();
 
+    // 🔮 Requisição ao GPT
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [

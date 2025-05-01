@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import { julian, solar, moonposition, base, planetposition, sidereal } from 'astronomia';
-import fetch from 'node-fetch';
+
+// ✅ Importação dinâmica para evitar erro de ESM no Netlify
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 import vsop87Bearth from 'astronomia/data/vsop87Bearth.js';
 import vsop87Bmercury from 'astronomia/data/vsop87Bmercury.js';
