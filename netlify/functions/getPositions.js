@@ -11,7 +11,6 @@ const vsop87Bjupiter = require('./ephemerides/vsop87Bjupiter.json');
 const vsop87Bsaturn  = require('./ephemerides/vsop87Bsaturn.json');
 const vsop87Buranus  = require('./ephemerides/vsop87Buranus.json');
 const vsop87Bneptune = require('./ephemerides/vsop87Bneptune.json');
-const vsop87Bpluto   = require('./ephemerides/vsop87Bpluto.json');
 
 // Planetas
 const earth   = new planetposition.Planet(vsop87Bearth);
@@ -22,7 +21,6 @@ const jupiter = new planetposition.Planet(vsop87Bjupiter);
 const saturn  = new planetposition.Planet(vsop87Bsaturn);
 const uranus  = new planetposition.Planet(vsop87Buranus);
 const neptune = new planetposition.Planet(vsop87Bneptune);
-const pluto   = new planetposition.Planet(vsop87Bpluto);
 
 const DEG = base.RAD2DEG;
 
@@ -40,8 +38,7 @@ const planetIcons = {
   'Júpiter':  '♃',
   'Saturno':  '♄',
   'Urano':    '♅',
-  'Netuno':   '♆',
-  'Plutão':   '♇'
+  'Netuno':   '♆'
 };
 
 function grauParaSigno(degree) {
@@ -115,8 +112,7 @@ exports.handler = async (event) => {
       { name: 'Júpiter',  total: planetGeoLongitude(jd, jupiter) },
       { name: 'Saturno',  total: planetGeoLongitude(jd, saturn) },
       { name: 'Urano',    total: planetGeoLongitude(jd, uranus) },
-      { name: 'Netuno',   total: planetGeoLongitude(jd, neptune) },
-      { name: 'Plutão',   total: planetGeoLongitude(jd, pluto) }
+      { name: 'Netuno',   total: planetGeoLongitude(jd, neptune) }
     ];
 
     const planets = lista.map(obj => {
