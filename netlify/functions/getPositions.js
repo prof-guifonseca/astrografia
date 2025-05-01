@@ -16,10 +16,10 @@ async function obterCoordenadas(local) {
 
 function formatarPrompt({ birthDate, birthTime, birthPlace, lat, lng }) {
   return `
-Você é um astrólogo profissional com acesso a efemérides reais. Calcule e retorne as posições dos seguintes astros para o mapa astral da pessoa:
+Você é um astrólogo profissional com acesso a efemérides reais. Calcule e retorne as posições dos seguintes astros:
 
 - Sol, Lua, Mercúrio, Vênus, Marte, Júpiter, Saturno, Urano, Netuno
-- Ascendente (com base na latitude, longitude e hora local)
+- Ascendente (com base em latitude, longitude e hora local)
 
 Cada planeta deve conter:
 • name (exato, com inicial maiúscula)
@@ -31,14 +31,14 @@ O Ascendente deve conter:
 • sign
 • degree (grau decimal)
 
-Use astrologia tropical (não sideral).
+Use astrologia tropical.
 
-⚠️ Muito importante:
-• Todos os graus devem ser números válidos (ex: 12.7), sem palavras, letras ou símbolos
-• Lua e Ascendente devem refletir efemérides reais (precisão próxima a AstroSeek/Personare)
-• A resposta deve ser um único JSON, entre \`\`\`json e \`\`\`
+⚠️ Instruções obrigatórias:
+• Todos os graus devem ser números válidos (ex: 12.7)
+• Lua e Ascendente devem refletir efemérides reais, com precisão próxima ao AstroSeek ou Personare
+• Retorne **apenas o JSON** entre crases, sem explicações antes ou depois
 
-Modelo esperado:
+Formato de saída:
 \`\`\`json
 {
   "planets": [
@@ -59,9 +59,7 @@ Informações da pessoa:
 - Local: ${birthPlace}
 - Latitude: ${lat}
 - Longitude: ${lng}
-
-Retorne apenas o JSON no bloco indicado. Sem explicações.
-  `.trim();
+`.trim();
 }
 
 exports.handler = async function (event) {
@@ -95,7 +93,19 @@ exports.handler = async function (event) {
     const match = raw.match(/```json([\s\S]*?)```/);
     const jsonStr = match ? match[1].trim() : raw.trim();
 
-    const data = JSON.parse(jsonStr);
+    let data;
+    try {
+      data = JSON.parse(jsonStr);
+    } catch (err) {
+      console.error('[Astrografia] JSON inválido retornado pelo modelo:', jsonStr);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          error: 'O modelo retornou um JSON inválido.',
+          rawResponse: raw
+        })
+      };
+    }
 
     return {
       statusCode: 200,
