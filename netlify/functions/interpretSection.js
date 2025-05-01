@@ -6,46 +6,51 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
+// Mapeamento frontend → seção interpretativa
 const SECTIONS = {
-  amor:       "vida amorosa",
-  trabalho:   "vida profissional",
-  familia:    "relações familiares",
-  espiritual: "caminho espiritual",
-  mente:      "potencial mental e comunicação",
-  karmas:     "desafios e bloqueios",
-  crescimento:"conselhos para crescimento pessoal",
-  sintese:    "uma síntese poética da carta"
+  amor:            "vida amorosa",
+  carreira:        "vida profissional",
+  familia:         "relações familiares",
+  espiritualidade: "caminho espiritual",
+  missao:          "missão de vida",
+  desafios:        "desafios e bloqueios pessoais"
 };
 
 exports.handler = async (event) => {
   try {
-    const { name, section, planets } = JSON.parse(event.body || '{}');
+    const { tema, planetas, nome, ascendant } = JSON.parse(event.body || '{}');
 
-    if (!name || !section || !Array.isArray(planets)) {
+    if (!tema || !Array.isArray(planetas)) {
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'Parâmetros ausentes ou inválidos.' })
       };
     }
 
-    if (!SECTIONS[section]) {
+    const foco = SECTIONS[tema];
+    if (!foco) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Seção desconhecida.' })
+        body: JSON.stringify({ error: 'Tema desconhecido.' })
       };
     }
 
-    const foco = SECTIONS[section];
-    const nomeLimpo = name.replace(/[^\p{L} \-']/gu, '').trim();
+    const nomeLimpo = (nome || 'a pessoa').replace(/[^\p{L} \-']/gu, '').trim();
 
-    const mapa = planets
+    const mapa = planetas
       .map(p => `${p.name} em ${p.sign} (${p.signDegree}°)`)
       .join(', ');
 
+    const ascText = ascendant
+      ? `O ascendente está em ${ascendant.sign} (${ascendant.degree}°).`
+      : '';
+
     const prompt = `
-Você é um astrólogo experiente. Com base nas posições planetárias abaixo, escreva um texto breve (1 parágrafo) sobre ${foco} para a pessoa chamada ${nomeLimpo}:
+Você é um astrólogo experiente. Com base nas posições planetárias abaixo, escreva um texto breve (1 parágrafo) sobre ${foco} para ${nomeLimpo}:
 
 ${mapa}
+
+${ascText}
 
 Use linguagem acolhedora, objetiva, inspiradora e sem termos técnicos. Responda em Markdown.
     `.trim();
@@ -60,7 +65,7 @@ Use linguagem acolhedora, objetiva, inspiradora e sem termos técnicos. Responda
       max_tokens: 400
     });
 
-    const interpretation = response?.choices?.[0]?.message?.content || '⚠️ Nenhum texto gerado.';
+    const interpretation = response?.choices?.[0]?.message?.content?.trim() || '⚠️ Nenhum texto gerado.';
     const html = marked.parse(interpretation);
 
     return {

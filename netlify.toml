@@ -1,6 +1,6 @@
-# netlify.toml — Astrografia 🌌 (versão atualizada)
-# --------------------------------------------------
-# Configura o diretório de build e as funções serverless utilizadas
+# netlify.toml — Astrografia 🌌
+# ----------------------------------------
+# Configurações de build e funções serverless
 
 [build]
   publish   = "src"

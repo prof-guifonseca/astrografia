@@ -1,12 +1,13 @@
-// Astrografia 🌌 — Núcleo Consolidado v2.2 (getPositions + cache + leitura setorizada + destaque ativo)
+// Astrografia 🌌 — Núcleo Consolidado v2.3.1 (com Ascendente)
 (() => {
   'use strict';
 
   const API = {
-    generate: '/.netlify/functions/getPositions'
+    generate: '/.netlify/functions/getPositions',
+    interpretar: '/.netlify/functions/interpretSection'
   };
 
-  const $ = selector => document.querySelector(selector);
+  const $ = s => document.querySelector(s);
 
   const nameEl        = $('#name');
   const dateEl        = $('#birthDate');
@@ -17,10 +18,11 @@
   const summaryEl     = $('#summary');
   const chartEl       = $('#chart-container');
   const reportEl      = $('#report-container');
+  const temasSecao    = $('#premium-sections');
 
   let dadosGerados = null;
 
-  // Carrega do localStorage, se existir
+  // Tenta recuperar do cache
   const cache = localStorage.getItem('astroData');
   if (cache) {
     try {
@@ -28,11 +30,11 @@
       if (dadosGerados?.planets?.length) {
         summaryEl.textContent = '⚡ Dados carregados do cache.';
         resultSection.classList.remove('hidden');
-        exibirPlanetas(dadosGerados.planets);
-        document.getElementById('premium-sections')?.classList.remove('hidden');
+        temasSecao?.classList.remove('hidden');
+        exibirPlanetas(dadosGerados.planets, dadosGerados.ascendant);
       }
     } catch (e) {
-      console.warn('[Astrografia] Erro ao carregar cache:', e);
+      console.warn('[Astrografia] Falha ao ler cache:', e);
     }
   }
 
@@ -51,7 +53,7 @@
     }
   }
 
-  function exibirPlanetas(planets = []) {
+  function exibirPlanetas(planets = [], ascendant = null) {
     if (!planets.length) {
       chartEl.innerHTML = '<p>⚠️ Nenhuma posição planetária encontrada.</p>';
       return;
@@ -59,13 +61,22 @@
 
     const ul = document.createElement('ul');
     ul.classList.add('report-html');
+
+    // Ascendente
+    if (ascendant) {
+      const ascLi = document.createElement('li');
+      ascLi.innerHTML = `🌅 Ascendente: <strong>${ascendant.sign}</strong> ${ascendant.degree}°`;
+      ul.appendChild(ascLi);
+    }
+
+    // Planetas
     planets.forEach(p => {
       const li = document.createElement('li');
-      li.textContent = `☉ ${p.name}: ${p.sign} ${p.signDegree}°`;
+      li.textContent = `${p.icon || '🔹'} ${p.name}: ${p.sign} ${p.signDegree}°`;
       ul.appendChild(li);
     });
 
-    chartEl.innerHTML = '<h3 class="fade-in">🔭 Posições Planetárias</h3>';
+    chartEl.innerHTML = '<h3 class="fade-in">🔭 Mapa Astral</h3>';
     chartEl.appendChild(ul);
   }
 
@@ -82,7 +93,7 @@
 
     generateBtn.disabled = true;
     generateBtn.textContent = 'Calculando...';
-    summaryEl.textContent = '⌛ Calculando posições dos planetas...';
+    summaryEl.textContent = '⌛ Calculando posições planetárias...';
     chartEl.innerHTML = '';
     reportEl.innerHTML = '';
     resultSection.classList.remove('hidden');
@@ -95,44 +106,64 @@
     localStorage.setItem('astroData', JSON.stringify(response));
 
     summaryEl.textContent = '✅ Posições planetárias calculadas.';
-    exibirPlanetas(response.planets);
-    document.getElementById('premium-sections')?.classList.remove('hidden');
+    exibirPlanetas(response.planets, response.ascendant);
+    temasSecao?.classList.remove('hidden');
 
     generateBtn.disabled = false;
     generateBtn.textContent = 'Gerar Mapa Astral';
   });
 
-  // Interpretação temática
+  // Interpretação por seção
   document.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-topic]');
     if (!btn || !dadosGerados) return;
 
-    // Remove destaque anterior
+    const tema = btn.dataset.topic;
+    const cacheKey = `astroInterpretacao:${tema}`;
+
+    // Remove classe ativa de todos
     document.querySelectorAll('.btn-section').forEach(b => b.classList.remove('btn-section--active'));
     btn.classList.add('btn-section--active');
 
-    const tema = btn.dataset.topic;
+    // Oculta qualquer interpretação anterior
+    reportEl.innerHTML = '';
+
+    // Verifica cache primeiro
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      reportEl.innerHTML = cached;
+      return;
+    }
+
     btn.textContent = 'Gerando...';
     btn.disabled = true;
 
     try {
-      const res = await fetch('/.netlify/functions/interpretSection', {
+      const res = await fetch(API.interpretar, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tema, planetas: dadosGerados })
+        body: JSON.stringify({
+          tema,
+          planetas: dadosGerados.planets,
+          name: nameEl.value.trim(),
+          ascendant: dadosGerados.ascendant // já disponível
+        })
       });
 
       const json = await res.json();
       if (json.html) {
         reportEl.innerHTML = json.html;
-        localStorage.setItem(`astroInterpretacao:${tema}`, json.html);
+        localStorage.setItem(cacheKey, json.html);
+      } else {
+        reportEl.innerHTML = '<p>⚠️ Erro ao gerar relatório.</p>';
       }
+
     } catch (err) {
       console.error('Erro ao interpretar:', err);
-      reportEl.innerHTML = '<p>⚠️ Erro ao gerar relatório.</p>';
+      reportEl.innerHTML = '<p>⚠️ Erro ao se comunicar com o servidor.</p>';
     }
 
-    btn.textContent = btn.dataset.label || 'Interpretado';
+    btn.textContent = btn.dataset.label || '✔️ Interpretado';
     btn.disabled = true;
   });
 })();
