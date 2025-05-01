@@ -1,15 +1,15 @@
 require('dotenv').config();
 const { julian, solar, moonposition, base, planetposition, sidereal } = require('astronomia');
 
-// Importações VSOP87 dos planetas
-const vsop87Bearth    = require('astronomia/data/vsop87Bearth');
-const vsop87Bmercury  = require('astronomia/data/vsop87Bmercury');
-const vsop87Bvenus    = require('astronomia/data/vsop87Bvenus');
-const vsop87Bmars     = require('astronomia/data/vsop87Bmars');
-const vsop87Bjupiter  = require('astronomia/data/vsop87Bjupiter');
-const vsop87Bsaturn   = require('astronomia/data/vsop87Bsaturn');
-const vsop87Buranus   = require('astronomia/data/vsop87Buranus');
-const vsop87Bneptune  = require('astronomia/data/vsop87Bneptune');
+// Força inclusão dos dados VSOP87
+const vsop87Bearth    = require(require.resolve('astronomia/data/vsop87Bearth'));
+const vsop87Bmercury  = require(require.resolve('astronomia/data/vsop87Bmercury'));
+const vsop87Bvenus    = require(require.resolve('astronomia/data/vsop87Bvenus'));
+const vsop87Bmars     = require(require.resolve('astronomia/data/vsop87Bmars'));
+const vsop87Bjupiter  = require(require.resolve('astronomia/data/vsop87Bjupiter'));
+const vsop87Bsaturn   = require(require.resolve('astronomia/data/vsop87Bsaturn'));
+const vsop87Buranus   = require(require.resolve('astronomia/data/vsop87Buranus'));
+const vsop87Bneptune  = require(require.resolve('astronomia/data/vsop87Bneptune'));
 
 // Instâncias planetárias
 const earth   = new planetposition.Planet(vsop87Bearth);
