@@ -1,6 +1,6 @@
 # netlify.toml — Astrografia 🌌
 # ----------------------------------------
-# Configurações de build e funções serverless
+# Configuração de build e funções serverless
 
 [build]
   publish   = "src"
@@ -9,7 +9,8 @@
 [functions]
   node_bundler = "esbuild"
   included_files = [
-    "netlify/functions/**"
+    "netlify/functions/**",
+    "node_modules/astronomia/data/**"
   ]
 
 [[redirects]]
