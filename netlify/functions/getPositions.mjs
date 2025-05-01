@@ -1,30 +1,19 @@
 import 'dotenv/config';
-import { julian, solar, moonposition, base, planetposition, sidereal } from 'astronomia';
+import { julian, solar, moonposition, planetposition, data, base, sidereal } from 'astronomia';
 
-// ✅ Importação dinâmica para evitar erro de ESM no Netlify
+// ✅ Importação dinâmica compatível com ESM
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
-// 🌍 Dados VSOP87 (planetas)
-import vsop87Bearth from 'astronomia/data/vsop87Bearth.js';
-import vsop87Bmercury from 'astronomia/data/vsop87Bmercury.js';
-import vsop87Bvenus from 'astronomia/data/vsop87Bvenus.js';
-import vsop87Bmars from 'astronomia/data/vsop87Bmars.js';
-import vsop87Bjupiter from 'astronomia/data/vsop87Bjupiter.js';
-import vsop87Bsaturn from 'astronomia/data/vsop87Bsaturn.js';
-import vsop87Buranus from 'astronomia/data/vsop87Buranus.js';
-import vsop87Bneptune from 'astronomia/data/vsop87Bneptune.js';
+// 🌍 Planetas públicos via data
+const earth   = new planetposition.Planet(data.vsop87Bearth);
+const mercury = new planetposition.Planet(data.vsop87Bmercury);
+const venus   = new planetposition.Planet(data.vsop87Bvenus);
+const mars    = new planetposition.Planet(data.vsop87Bmars);
+const jupiter = new planetposition.Planet(data.vsop87Bjupiter);
+const saturn  = new planetposition.Planet(data.vsop87Bsaturn);
+const uranus  = new planetposition.Planet(data.vsop87Buranus);
+const neptune = new planetposition.Planet(data.vsop87Bneptune);
 
-// 🌠 Instanciando os planetas
-const earth   = new planetposition.Planet(vsop87Bearth);
-const mercury = new planetposition.Planet(vsop87Bmercury);
-const venus   = new planetposition.Planet(vsop87Bvenus);
-const mars    = new planetposition.Planet(vsop87Bmars);
-const jupiter = new planetposition.Planet(vsop87Bjupiter);
-const saturn  = new planetposition.Planet(vsop87Bsaturn);
-const uranus  = new planetposition.Planet(vsop87Buranus);
-const neptune = new planetposition.Planet(vsop87Bneptune);
-
-// 🧮 Utilitários
 const DEG = base.RAD2DEG;
 const RAD = Math.PI / 180;
 const DEG_FROM_RAD = 180 / Math.PI;
@@ -58,7 +47,6 @@ function calcularAscendente(jd, lat, lon) {
   const obliquity = 23.4367;
   const lst = sidereal.mean(jd) + (lon / 15);
   const lstDeg = base.pmod(lst * 15, 360);
-
   const lstRad = lstDeg * RAD;
   const oblRad = obliquity * RAD;
 
@@ -76,13 +64,12 @@ async function obterCoordenadas(local) {
 
   const res = await fetch(url);
   const json = await res.json();
-
   const geo = json?.results?.[0]?.geometry;
   if (!geo) throw new Error('Coordenadas não encontradas');
   return geo;
 }
 
-// 🚀 Função principal para Netlify
+// 🚀 Função Netlify
 export async function handler(event) {
   try {
     const { birthDate, birthTime, birthPlace } = JSON.parse(event.body || '{}');
