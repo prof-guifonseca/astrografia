@@ -2,10 +2,10 @@ require('dotenv').config();
 const { OpenAI } = require('openai');
 const { marked } = require('marked');
 
-// 🔑 Inicializa OpenAI com chave do ambiente
+// 🔑 Inicializa OpenAI com chave da API
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// 🎯 Tópicos aceitos no frontend
+// 🎯 Tópicos válidos para relatório
 const TEMAS = {
   amor:            'vida amorosa',
   carreira:        'vida profissional',
@@ -20,7 +20,7 @@ exports.handler = async (event) => {
   try {
     const { tema, planetas, nome, ascendant } = JSON.parse(event.body || '{}');
 
-    // 🔍 Validação mínima dos parâmetros
+    // 🔍 Validação dos parâmetros
     if (!TEMAS[tema] || !Array.isArray(planetas)) {
       return {
         statusCode: 400,
@@ -31,21 +31,26 @@ exports.handler = async (event) => {
     const foco = TEMAS[tema];
     const nomeLimpo = (nome || 'a pessoa').replace(/[^À-ſ\w \-']/gu, '').trim();
 
-    // 🔭 Monta mapa textual para o prompt
-    const mapa = planetas.map(p => `${p.name} em ${p.sign} (${p.signDegree}°)`).join(', ');
-    const ascText = ascendant ? `Ascendente em ${ascendant.sign} (${ascendant.degree}°).` : '';
+    // 🔭 Monta mapa textual para uso no prompt
+    const mapa = planetas
+      .map(p => `${p.name} em ${p.sign} (${p.signDegree}°)`)
+      .join(', ');
 
-    // 🧠 Prompt para interpretação
+    const ascText = ascendant
+      ? `Ascendente em ${ascendant.sign} (${ascendant.degree}°).`
+      : '';
+
+    // ✨ Prompt para interpretação
     const prompt = `
 Você é um astrólogo experiente. Com base nas posições planetárias abaixo, escreva um texto breve (1 parágrafo) sobre ${foco} para ${nomeLimpo}:
 
 ${mapa}
 ${ascText}
 
-Use linguagem acolhedora, objetiva, inspiradora e sem termos técnicos. Seja sensível e otimista. Responda em Markdown.
+Use linguagem acolhedora, objetiva, inspiradora e sem termos técnicos. Seja sensível, otimista e claro. Responda em Markdown.
     `.trim();
 
-    // 📡 Chamada à API da OpenAI
+    // 📡 Requisição ao modelo da OpenAI
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
@@ -56,14 +61,14 @@ Use linguagem acolhedora, objetiva, inspiradora e sem termos técnicos. Seja sen
       max_tokens: 400
     });
 
-    const interpretation = response?.choices?.[0]?.message?.content?.trim() || '⚠️ Nenhum texto gerado.';
-    const html = marked.parse(interpretation);
+    const markdown = response?.choices?.[0]?.message?.content?.trim() || '⚠️ Nenhum conteúdo gerado.';
+    const html = marked.parse(markdown);
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         html,
-        markdown: interpretation,
+        markdown,
         section: foco
       })
     };

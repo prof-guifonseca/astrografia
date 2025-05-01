@@ -1,7 +1,7 @@
 require('dotenv').config();
 const { julian, solar, moonposition, base, planetposition, sidereal } = require('astronomia');
 
-// Força inclusão dos dados VSOP87
+// Importações VSOP87 com require.resolve para garantir bundling
 const vsop87Bearth    = require(require.resolve('astronomia/data/vsop87Bearth'));
 const vsop87Bmercury  = require(require.resolve('astronomia/data/vsop87Bmercury'));
 const vsop87Bvenus    = require(require.resolve('astronomia/data/vsop87Bvenus'));
@@ -11,7 +11,7 @@ const vsop87Bsaturn   = require(require.resolve('astronomia/data/vsop87Bsaturn')
 const vsop87Buranus   = require(require.resolve('astronomia/data/vsop87Buranus'));
 const vsop87Bneptune  = require(require.resolve('astronomia/data/vsop87Bneptune'));
 
-// Instâncias planetárias
+// Instanciando planetas
 const earth   = new planetposition.Planet(vsop87Bearth);
 const mercury = new planetposition.Planet(vsop87Bmercury);
 const venus   = new planetposition.Planet(vsop87Bvenus);
@@ -21,7 +21,7 @@ const saturn  = new planetposition.Planet(vsop87Bsaturn);
 const uranus  = new planetposition.Planet(vsop87Buranus);
 const neptune = new planetposition.Planet(vsop87Bneptune);
 
-// Utilitários
+// Constantes auxiliares
 const DEG = base.RAD2DEG;
 const RAD = Math.PI / 180;
 const DEG_FROM_RAD = 180 / Math.PI;
@@ -36,6 +36,7 @@ const planetIcons = {
   'Marte': '♂️', 'Júpiter': '♃', 'Saturno': '♄', 'Urano': '♅', 'Netuno': '♆'
 };
 
+// Conversão de graus para signo astrológico
 function grauParaSigno(degree) {
   const index = Math.floor(degree / 30) % 12;
   return {
@@ -44,6 +45,7 @@ function grauParaSigno(degree) {
   };
 }
 
+// Longitude geocêntrica do planeta
 function planetGeoLongitude(jd, planet) {
   const earthPos = earth.position(jd);
   const planetPos = planet.position(jd);
@@ -51,6 +53,7 @@ function planetGeoLongitude(jd, planet) {
   return base.pmod(lon * DEG, 360);
 }
 
+// Cálculo do ascendente
 function calcularAscendente(jd, lat, lon) {
   const obliquity = 23.4367;
   const lst = sidereal.mean(jd) + (lon / 15);
@@ -67,6 +70,7 @@ function calcularAscendente(jd, lat, lon) {
   return base.pmod(ascRad * DEG_FROM_RAD, 360);
 }
 
+// Consulta à API OpenCage para coordenadas geográficas
 async function obterCoordenadas(local) {
   const key = process.env.OPENCAGE_API_KEY;
   const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(local)}&key=${key}&language=pt&no_annotations=1&limit=1`;
@@ -80,6 +84,7 @@ async function obterCoordenadas(local) {
   return geo;
 }
 
+// 🔧 Função principal Serverless (Netlify)
 exports.handler = async (event) => {
   try {
     const { birthDate, birthTime, birthPlace } = JSON.parse(event.body || '{}');
