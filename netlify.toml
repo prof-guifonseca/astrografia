@@ -1,6 +1,6 @@
 [build]
-  publish = "src"
   functions = "netlify/functions"
+  publish = "src"
 
 [functions]
   node_bundler = "esbuild"
@@ -14,9 +14,6 @@
   included_files = [
     "node_modules/astronomia/data/**"
   ]
-
-[functions-src]
-  directory = "netlify/functions-src"
 
 [[redirects]]
   from = "/api/*"
