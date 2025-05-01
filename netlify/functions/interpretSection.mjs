@@ -2,10 +2,12 @@ import 'dotenv/config';
 import { OpenAI } from 'openai';
 import { marked } from 'marked';
 
-// 🔑 Cliente OpenAI inicializado com chave do ambiente
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// 🔑 Inicialização segura do cliente OpenAI
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
-// 🎯 Tópicos permitidos
+// 🎯 Temas disponíveis para análise
 const TEMAS = {
   amor:            'vida amorosa',
   carreira:        'vida profissional',
@@ -15,12 +17,12 @@ const TEMAS = {
   desafios:        'desafios e bloqueios pessoais'
 };
 
-// 🚀 Função principal Netlify Function
+// 🚀 Função Netlify principal
 export async function handler(event) {
   try {
     const { tema, planetas, nome, ascendant } = JSON.parse(event.body || '{}');
 
-    // 🛑 Validação de entrada
+    // 🛑 Verificação básica dos parâmetros
     if (!TEMAS[tema] || !Array.isArray(planetas)) {
       return {
         statusCode: 400,
@@ -31,7 +33,7 @@ export async function handler(event) {
     const foco = TEMAS[tema];
     const nomeLimpo = (nome || 'a pessoa').replace(/[^À-ſ\w \-']/gu, '').trim();
 
-    // 🔭 Composição textual dos astros
+    // 🔭 Montagem do mapa astral textual
     const mapa = planetas
       .map(p => `${p.name} em ${p.sign} (${p.signDegree}°)`)
       .join(', ');
@@ -40,7 +42,7 @@ export async function handler(event) {
       ? `Ascendente em ${ascendant.sign} (${ascendant.degree}°).`
       : '';
 
-    // 🧠 Prompt personalizado
+    // ✍️ Prompt enviado ao modelo
     const prompt = `
 Você é um astrólogo experiente. Com base nas posições planetárias abaixo, escreva um texto breve (1 parágrafo) sobre ${foco} para ${nomeLimpo}:
 
@@ -50,7 +52,7 @@ ${ascText}
 Use linguagem acolhedora, objetiva, inspiradora e sem termos técnicos. Seja sensível, otimista e claro. Responda em Markdown.
     `.trim();
 
-    // 🔮 Chamada à API da OpenAI
+    // 🔮 Geração do texto com OpenAI
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [

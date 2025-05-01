@@ -1,19 +1,29 @@
 import 'dotenv/config';
-import { julian, solar, moonposition, planetposition, data, base, sidereal } from 'astronomia';
+import { julian, solar, moonposition, planetposition, base, sidereal } from 'astronomia';
 
-// ✅ Importação dinâmica compatível com ESM
+import vsop87Bearth    from 'astronomia/data/vsop87Bearth';
+import vsop87Bmercury  from 'astronomia/data/vsop87Bmercury';
+import vsop87Bvenus    from 'astronomia/data/vsop87Bvenus';
+import vsop87Bmars     from 'astronomia/data/vsop87Bmars';
+import vsop87Bjupiter  from 'astronomia/data/vsop87Bjupiter';
+import vsop87Bsaturn   from 'astronomia/data/vsop87Bsaturn';
+import vsop87Buranus   from 'astronomia/data/vsop87Buranus';
+import vsop87Bneptune  from 'astronomia/data/vsop87Bneptune';
+
+// ✅ Importação dinâmica do fetch (Node.js compatível)
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
-// 🌍 Planetas públicos via data
-const earth   = new planetposition.Planet(data.vsop87Bearth);
-const mercury = new planetposition.Planet(data.vsop87Bmercury);
-const venus   = new planetposition.Planet(data.vsop87Bvenus);
-const mars    = new planetposition.Planet(data.vsop87Bmars);
-const jupiter = new planetposition.Planet(data.vsop87Bjupiter);
-const saturn  = new planetposition.Planet(data.vsop87Bsaturn);
-const uranus  = new planetposition.Planet(data.vsop87Buranus);
-const neptune = new planetposition.Planet(data.vsop87Bneptune);
+// 🌍 Instanciando planetas
+const earth   = new planetposition.Planet(vsop87Bearth);
+const mercury = new planetposition.Planet(vsop87Bmercury);
+const venus   = new planetposition.Planet(vsop87Bvenus);
+const mars    = new planetposition.Planet(vsop87Bmars);
+const jupiter = new planetposition.Planet(vsop87Bjupiter);
+const saturn  = new planetposition.Planet(vsop87Bsaturn);
+const uranus  = new planetposition.Planet(vsop87Buranus);
+const neptune = new planetposition.Planet(vsop87Bneptune);
 
+// 🔢 Utilitários
 const DEG = base.RAD2DEG;
 const RAD = Math.PI / 180;
 const DEG_FROM_RAD = 180 / Math.PI;
