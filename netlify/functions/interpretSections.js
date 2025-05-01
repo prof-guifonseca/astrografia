@@ -1,6 +1,6 @@
-import 'dotenv/config';
-import { OpenAI } from 'openai';
-import { marked } from 'marked';
+require('dotenv').config();
+const { OpenAI } = require('openai');
+const { marked } = require('marked');
 
 // 🔑 Inicialização segura do cliente OpenAI
 const openai = new OpenAI({
@@ -18,11 +18,10 @@ const TEMAS = {
 };
 
 // 🚀 Função Netlify principal
-export async function handler(event) {
+exports.handler = async function(event) {
   try {
     const { tema, planetas, nome, ascendant } = JSON.parse(event.body || '{}');
 
-    // 🛑 Verificação básica dos parâmetros
     if (!TEMAS[tema] || !Array.isArray(planetas)) {
       return {
         statusCode: 400,
@@ -33,34 +32,41 @@ export async function handler(event) {
     const foco = TEMAS[tema];
     const nomeLimpo = (nome || 'a pessoa').replace(/[^À-ſ\w \-']/gu, '').trim();
 
-    // 🔭 Montagem do mapa astral textual
     const mapa = planetas
       .map(p => `${p.name} em ${p.sign} (${p.signDegree}°)`)
       .join(', ');
 
     const ascText = ascendant
-      ? `Ascendente em ${ascendant.sign} (${ascendant.degree}°).`
+      ? `Ascendente em ${ascendant.sign} (${ascendant.degree}°)`
       : '';
 
-    // ✍️ Prompt enviado ao modelo
     const prompt = `
-Você é um astrólogo experiente. Com base nas posições planetárias abaixo, escreva um texto breve (1 parágrafo) sobre ${foco} para ${nomeLimpo}:
+Você é um astrólogo experiente, sensível e responsável. Com base nas posições astrológicas a seguir, escreva um parágrafo interpretando a temática de "${foco}" para ${nomeLimpo}.
 
+Padrões astrais:
 ${mapa}
-${ascText}
+${ascText ? '\n' + ascText : ''}
 
-Use linguagem acolhedora, objetiva, inspiradora e sem termos técnicos. Seja sensível, otimista e claro. Responda em Markdown.
+• Utilize linguagem acolhedora, motivadora e clara.
+• Não use jargões técnicos como "quadratura" ou "trígono".
+• Evite clichês esotéricos e generalizações óbvias.
+• Mencione o Ascendente como marcador de estilo pessoal, se estiver presente.
+• Responda exclusivamente em Markdown (1 parágrafo, sem listas).
+
+Seja útil, coerente e centrado no contexto astral apresentado.
     `.trim();
 
-    // 🔮 Geração do texto com OpenAI
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
-        { role: 'system', content: 'Você é um astrólogo direto, acolhedor e sensível.' },
+        {
+          role: 'system',
+          content: 'Você é um astrólogo profissional que escreve com sensibilidade, precisão e respeito pelo simbolismo astrológico.'
+        },
         { role: 'user', content: prompt }
       ],
-      temperature: 0.7,
-      max_tokens: 400
+      temperature: 0.65,
+      max_tokens: 450
     });
 
     const markdown = response?.choices?.[0]?.message?.content?.trim() || '⚠️ Nenhum conteúdo gerado.';
@@ -82,4 +88,4 @@ Use linguagem acolhedora, objetiva, inspiradora e sem termos técnicos. Seja sen
       body: JSON.stringify({ error: 'Erro interno ao gerar interpretação.' })
     };
   }
-}
+};

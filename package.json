@@ -2,10 +2,9 @@
   "name": "astrografia",
   "version": "1.0.0",
   "description": "Mapa Astral Personalizado com Ascendente e Interpretações Temáticas via API",
-  "type": "module",
   "scripts": {
     "start": "netlify dev",
-    "build": "echo 'Funções são gerenciadas pela Netlify Build'",
+    "build": "echo \"Nada para compilar. Funções são gerenciadas pela Netlify.\"",
     "test": "echo \"No tests specified\" && exit 0"
   },
   "keywords": [
@@ -26,7 +25,6 @@
   },
   "homepage": "https://astrografia.netlify.app",
   "dependencies": {
-    "astronomia": "^4.1.1",
     "dotenv": "^16.5.0",
     "marked": "^15.0.11",
     "node-fetch": "^2.7.0",

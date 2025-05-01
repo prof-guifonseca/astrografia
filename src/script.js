@@ -1,4 +1,4 @@
-// Astrografia 🌌 — Núcleo Consolidado v2.3.3 (com Ascendente e Relatórios por Seção)
+// Astrografia 🌌 — Núcleo Consolidado v3.1 (JS compatível + GPT-only)
 (() => {
   'use strict';
 
@@ -9,36 +9,38 @@
 
   const $ = s => document.querySelector(s);
 
+  const formEl        = $('#astro-form');
   const nameEl        = $('#name');
   const dateEl        = $('#birthDate');
   const timeEl        = $('#birthTime');
   const placeEl       = $('#birthPlace');
-  const generateBtn   = $('#generateMap');
   const resultSection = $('#result-section');
   const summaryEl     = $('#summary');
   const chartEl       = $('#chart-container');
   const reportEl      = $('#report-container');
   const sectionBtns   = document.querySelectorAll('.btn-section');
+  const sectionGroup  = $('#section-buttons');
 
   let dadosGerados = null;
 
-  // 🔄 Recupera cache salvo anteriormente (se houver)
+  // 🔄 Recupera cache local
   const astroCache = localStorage.getItem('astroData');
   if (astroCache) {
     try {
-      dadosGerados = JSON.parse(astroCache);
-      if (dadosGerados?.planets?.length) {
+      const parsed = JSON.parse(astroCache);
+      if (parsed?.planets?.length && parsed?.ascendant) {
+        dadosGerados = parsed;
         summaryEl.textContent = '⚡ Dados carregados do cache.';
         resultSection.classList.remove('hidden');
-        exibirPlanetas(dadosGerados.planets, dadosGerados.ascendant);
-        mostrarBotoesDeSecao();
+        exibirPlanetas(parsed.planets, parsed.ascendant);
+        sectionGroup?.classList.remove('hidden');
       }
     } catch (e) {
       console.warn('[Astrografia] Falha ao ler cache:', e);
     }
   }
 
-  // 🚀 Função que requisita cálculo de posições planetárias
+  // 🚀 Consulta à função Netlify que usa GPT
   async function obterPosicoesPlanetarias(userData) {
     try {
       const res = await fetch(API.generate, {
@@ -50,43 +52,41 @@
       return await res.json();
     } catch (err) {
       console.error('[Astrografia] Erro ao obter posições:', err);
-      return { planets: [] };
+      return { planets: [], ascendant: null };
     }
   }
 
-  // 🌌 Exibe os planetas + ascendente na tela
+  // 🌌 Renderiza as posições planetárias
   function exibirPlanetas(planets = [], ascendant = null) {
+    chartEl.innerHTML = '<h3 class="fade-in">🔭 Posições Celestes</h3>';
+
     if (!planets.length) {
-      chartEl.innerHTML = '<p>⚠️ Nenhuma posição planetária encontrada.</p>';
+      chartEl.innerHTML += '<p>⚠️ Nenhuma posição planetária encontrada.</p>';
       return;
     }
 
     const ul = document.createElement('ul');
     ul.classList.add('report-html');
 
-    if (ascendant) {
+    if (ascendant?.sign) {
       const ascLi = document.createElement('li');
-      ascLi.innerHTML = `🌅 Ascendente: <strong>${ascendant.sign}</strong> ${ascendant.degree}°`;
+      ascLi.innerHTML = `🌅 Ascendente: <strong>${ascendant.sign}</strong> ${Number(ascendant.degree).toFixed(1)}°`;
       ul.appendChild(ascLi);
     }
 
     planets.forEach(p => {
       const li = document.createElement('li');
-      li.textContent = `${p.icon || '🔹'} ${p.name}: ${p.sign} ${p.signDegree}°`;
+      li.textContent = `${p.icon || '🔹'} ${p.name}: ${p.sign} ${Number(p.signDegree).toFixed(1)}°`;
       ul.appendChild(li);
     });
 
-    chartEl.innerHTML = '<h3 class="fade-in">🔭 Posições Celestes</h3>';
     chartEl.appendChild(ul);
   }
 
-  // 👁️ Torna visíveis os botões de seção temática
-  function mostrarBotoesDeSecao() {
-    document.getElementById('section-buttons')?.classList.remove('hidden');
-  }
+  // 🧾 Evento: envio do formulário
+  formEl.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-  // 🎯 Gatilho: clique no botão "Calcular Posições Planetárias"
-  generateBtn.addEventListener('click', async () => {
     const name       = nameEl.value.trim();
     const birthDate  = dateEl.value;
     const birthTime  = timeEl.value;
@@ -97,9 +97,10 @@
       return;
     }
 
-    generateBtn.disabled = true;
-    generateBtn.textContent = 'Calculando...';
-    summaryEl.textContent = '⌛ Calculando posições planetárias...';
+    const btn = $('#generateMap');
+    btn.disabled = true;
+    btn.textContent = '⌛ Consultando...';
+    summaryEl.textContent = 'Gerando mapa com base no GPT...';
     chartEl.innerHTML = '';
     reportEl.innerHTML = '';
     resultSection.classList.remove('hidden');
@@ -109,15 +110,15 @@
     dadosGerados = response;
     localStorage.setItem('astroData', JSON.stringify(response));
 
-    summaryEl.textContent = '✅ Posições calculadas com sucesso!';
+    summaryEl.textContent = '✅ Mapa gerado com sucesso!';
     exibirPlanetas(response.planets, response.ascendant);
-    mostrarBotoesDeSecao();
+    sectionGroup?.classList.remove('hidden');
 
-    generateBtn.disabled = false;
-    generateBtn.textContent = 'Obter Posições Celestes';
+    btn.disabled = false;
+    btn.textContent = 'Obter Mapa Astral';
   });
 
-  // 📖 Geração de relatório interpretativo por tema
+  // 📖 Evento: clique nos botões temáticos
   document.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-topic]');
     if (!btn || !dadosGerados) return;
@@ -145,7 +146,7 @@
         body: JSON.stringify({
           tema,
           planetas: dadosGerados.planets,
-          name: nameEl.value.trim(),
+          nome: nameEl.value.trim(),
           ascendant: dadosGerados.ascendant
         })
       });
@@ -163,7 +164,7 @@
       reportEl.innerHTML = '<p>⚠️ Erro ao se comunicar com o servidor.</p>';
     }
 
-    btn.textContent = btn.dataset.label || '✔️ Interpretado';
+    btn.textContent = '✔️ Interpretado';
     btn.disabled = true;
   });
 
