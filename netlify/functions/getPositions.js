@@ -21,12 +21,16 @@ const saturn  = new planetposition.Planet(vsop87Bsaturn);
 const uranus  = new planetposition.Planet(vsop87Buranus);
 const neptune = new planetposition.Planet(vsop87Bneptune);
 
-// Utilitários astrológicos
+// Utilitários
 const DEG = base.RAD2DEG;
+const RAD = Math.PI / 180;
+const DEG_FROM_RAD = 180 / Math.PI;
+
 const signos = [
   'Áries', 'Touro', 'Gêmeos', 'Câncer', 'Leão', 'Virgem',
   'Libra', 'Escorpião', 'Sagitário', 'Capricórnio', 'Aquário', 'Peixes'
 ];
+
 const planetIcons = {
   'Sol': '☀️', 'Lua': '🌙', 'Mercúrio': '☿️', 'Vênus': '♀️',
   'Marte': '♂️', 'Júpiter': '♃', 'Saturno': '♄', 'Urano': '♅', 'Netuno': '♆'
@@ -48,16 +52,19 @@ function planetGeoLongitude(jd, planet) {
 }
 
 function calcularAscendente(jd, lat, lon) {
-  const obliquity = 23.4367; // aproximação da obliquidade da eclíptica
-  const lst = sidereal.mean(jd) + (lon / 15); // tempo sideral local
+  const obliquity = 23.4367;
+  const lst = sidereal.mean(jd) + (lon / 15);
   const lstDeg = base.pmod(lst * 15, 360);
 
+  const lstRad = lstDeg * RAD;
+  const oblRad = obliquity * RAD;
+
   const ascRad = Math.atan2(
-    Math.cos(base.deg2rad(obliquity)) * Math.sin(base.deg2rad(lstDeg)),
-    Math.cos(base.deg2rad(lstDeg))
+    Math.cos(oblRad) * Math.sin(lstRad),
+    Math.cos(lstRad)
   );
 
-  return base.pmod(base.rad2deg(ascRad), 360);
+  return base.pmod(ascRad * DEG_FROM_RAD, 360);
 }
 
 async function obterCoordenadas(local) {
@@ -73,10 +80,9 @@ async function obterCoordenadas(local) {
   return geo;
 }
 
-// 🔧 Função principal serverless
 exports.handler = async (event) => {
   try {
-    const { birthDate, birthTime, birthPlace, name } = JSON.parse(event.body || '{}');
+    const { birthDate, birthTime, birthPlace } = JSON.parse(event.body || '{}');
 
     if (!birthDate || !birthTime || !birthPlace) {
       return {
