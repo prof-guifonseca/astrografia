@@ -1,6 +1,5 @@
 require('dotenv').config();
 const { julian, solar, moonposition, planetposition, base } = require('astronomia');
-const fetch = require('node-fetch');
 
 // Dados VSOP87 carregados manualmente
 const vsop87Bearth   = require('./ephemerides/vsop87Bearth.json');
@@ -71,6 +70,8 @@ function calcularAscendente(jd, lat, lon) {
 async function obterCoordenadas(local) {
   const key = process.env.OPENCAGE_API_KEY;
   const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(local)}&key=${key}&language=pt&no_annotations=1&limit=1`;
+
+  const fetch = (...args) => import('node-fetch').then(mod => mod.default(...args));
   const res = await fetch(url);
   const json = await res.json();
 
