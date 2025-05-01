@@ -42,11 +42,10 @@
       <p id="summary"></p>
       <div id="chart-container"></div>
       <div id="report-container" class="report-html"></div>
-      <button id="printReport" class="btn">Imprimir Relatório</button>
     </section>
 
-    <!-- Botões Premium -->
-    <section id="premium-sections" class="section-buttons card hidden">
+    <!-- Relatórios Temáticos -->
+    <section id="section-buttons" class="section-buttons card hidden">
       <h3>Explorar Relatórios Temáticos</h3>
       <div class="btn-grid">
         <button class="btn-section" data-topic="amor">❤️ Vida Amorosa</button>
@@ -58,44 +57,5 @@
       </div>
     </section>
   </main>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('printReport')?.addEventListener('click', () => window.print());
-    });
-
-    let dadosGerados = null;
-
-    document.addEventListener('click', async (e) => {
-      const btn = e.target.closest('[data-topic]');
-      if (!btn || !dadosGerados) return;
-
-      const tema = btn.dataset.topic;
-      document.getElementById('report-container').innerHTML = '';
-      document.querySelectorAll('.btn-section').forEach(b => b.disabled = false);
-      btn.disabled = true;
-      btn.textContent = 'Gerando...';
-
-      try {
-        const res = await fetch('/.netlify/functions/interpretSection', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tema, planetas: dadosGerados.planets, nome: document.getElementById('name').value })
-        });
-
-        const json = await res.json();
-        document.getElementById('report-container').innerHTML = json.html || '<p>⚠️ Não foi possível interpretar.</p>';
-      } catch (err) {
-        console.error('Erro ao interpretar:', err);
-        document.getElementById('report-container').innerHTML = '<p>⚠️ Erro ao gerar interpretação.</p>';
-      }
-
-      btn.textContent = 'Gerar novamente';
-    });
-
-    window.revelarBotoesPremium = () => {
-      document.getElementById('premium-sections')?.classList.remove('hidden');
-    };
-  </script>
 </body>
 </html>

@@ -131,7 +131,7 @@ input:focus {
   outline: none;
 }
 
-/* Botões */
+/* Botões principais */
 .btn {
   align-self: center;
   padding: 0.75rem 1.5rem;
@@ -162,7 +162,7 @@ input:focus {
   opacity: 0.7;
 }
 
-/* Botões Temáticos */
+/* Botões de seção temática */
 .section-buttons {
   margin-top: 1.5rem;
 }
@@ -265,8 +265,7 @@ input:focus {
   }
 
   .app-header,
-  #form-section,
-  #printReport {
+  #form-section {
     display: none !important;
   }
 
@@ -287,5 +286,10 @@ input:focus {
 
   .hidden {
     display: block !important;
+  }
+
+  /* Oculta posições planetárias da impressão */
+  #chart-container {
+    display: none !important;
   }
 }

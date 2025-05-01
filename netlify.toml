@@ -1,16 +1,18 @@
 # netlify.toml — Astrografia 🌌
-# ----------------------------------------
 # Configuração de build e funções serverless
 
 [build]
-  publish   = "src"
-  functions = "netlify/functions"
+  publish = "src"                     # Pasta que contém o index.html
+  functions = "netlify/functions"     # Pasta das funções serverless
 
 [functions]
-  node_bundler = "esbuild"
+  node_bundler = "esbuild"            # Usa bundler moderno e eficiente
+  included_files = [
+    "node_modules/astronomia/data/**" # Garante que os dados VSOP87 sejam incluídos
+  ]
 
 [[redirects]]
   from = "/api/*"
-  to   = "/.netlify/functions/:splat"
+  to = "/.netlify/functions/:splat"
   status = 200
-  force  = true
+  force = true

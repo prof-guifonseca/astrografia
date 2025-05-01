@@ -1,4 +1,4 @@
-// Astrografia 🌌 — Núcleo Consolidado v2.3.1 (com Ascendente)
+// Astrografia 🌌 — Núcleo Consolidado v2.3.3 (com Ascendente e Relatórios por Seção)
 (() => {
   'use strict';
 
@@ -18,26 +18,27 @@
   const summaryEl     = $('#summary');
   const chartEl       = $('#chart-container');
   const reportEl      = $('#report-container');
-  const temasSecao    = $('#premium-sections');
+  const sectionBtns   = document.querySelectorAll('.btn-section');
 
   let dadosGerados = null;
 
-  // Tenta recuperar do cache
-  const cache = localStorage.getItem('astroData');
-  if (cache) {
+  // 🔄 Recupera cache salvo anteriormente (se houver)
+  const astroCache = localStorage.getItem('astroData');
+  if (astroCache) {
     try {
-      dadosGerados = JSON.parse(cache);
+      dadosGerados = JSON.parse(astroCache);
       if (dadosGerados?.planets?.length) {
         summaryEl.textContent = '⚡ Dados carregados do cache.';
         resultSection.classList.remove('hidden');
-        temasSecao?.classList.remove('hidden');
         exibirPlanetas(dadosGerados.planets, dadosGerados.ascendant);
+        mostrarBotoesDeSecao();
       }
     } catch (e) {
       console.warn('[Astrografia] Falha ao ler cache:', e);
     }
   }
 
+  // 🚀 Função que requisita cálculo de posições planetárias
   async function obterPosicoesPlanetarias(userData) {
     try {
       const res = await fetch(API.generate, {
@@ -53,6 +54,7 @@
     }
   }
 
+  // 🌌 Exibe os planetas + ascendente na tela
   function exibirPlanetas(planets = [], ascendant = null) {
     if (!planets.length) {
       chartEl.innerHTML = '<p>⚠️ Nenhuma posição planetária encontrada.</p>';
@@ -62,14 +64,12 @@
     const ul = document.createElement('ul');
     ul.classList.add('report-html');
 
-    // Ascendente
     if (ascendant) {
       const ascLi = document.createElement('li');
       ascLi.innerHTML = `🌅 Ascendente: <strong>${ascendant.sign}</strong> ${ascendant.degree}°`;
       ul.appendChild(ascLi);
     }
 
-    // Planetas
     planets.forEach(p => {
       const li = document.createElement('li');
       li.textContent = `${p.icon || '🔹'} ${p.name}: ${p.sign} ${p.signDegree}°`;
@@ -80,10 +80,16 @@
     chartEl.appendChild(ul);
   }
 
+  // 👁️ Torna visíveis os botões de seção temática
+  function mostrarBotoesDeSecao() {
+    document.getElementById('section-buttons')?.classList.remove('hidden');
+  }
+
+  // 🎯 Gatilho: clique no botão "Calcular Posições Planetárias"
   generateBtn.addEventListener('click', async () => {
-    const name = nameEl.value.trim();
-    const birthDate = dateEl.value;
-    const birthTime = timeEl.value;
+    const name       = nameEl.value.trim();
+    const birthDate  = dateEl.value;
+    const birthTime  = timeEl.value;
     const birthPlace = placeEl.value.trim();
 
     if (!name || !birthDate || !birthTime || !birthPlace) {
@@ -98,22 +104,20 @@
     reportEl.innerHTML = '';
     resultSection.classList.remove('hidden');
 
-    const response = await obterPosicoesPlanetarias({
-      name, birthDate, birthTime, birthPlace
-    });
+    const response = await obterPosicoesPlanetarias({ name, birthDate, birthTime, birthPlace });
 
     dadosGerados = response;
     localStorage.setItem('astroData', JSON.stringify(response));
 
     summaryEl.textContent = '✅ Posições calculadas com sucesso!';
     exibirPlanetas(response.planets, response.ascendant);
-    temasSecao?.classList.remove('hidden');
+    mostrarBotoesDeSecao();
 
     generateBtn.disabled = false;
     generateBtn.textContent = 'Obter Posições Celestes';
   });
 
-  // Interpretação por seção
+  // 📖 Geração de relatório interpretativo por tema
   document.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-topic]');
     if (!btn || !dadosGerados) return;
@@ -121,9 +125,8 @@
     const tema = btn.dataset.topic;
     const cacheKey = `astroInterpretacao:${tema}`;
 
-    document.querySelectorAll('.btn-section').forEach(b => b.classList.remove('btn-section--active'));
+    sectionBtns.forEach(b => b.classList.remove('btn-section--active'));
     btn.classList.add('btn-section--active');
-
     reportEl.innerHTML = '';
 
     const cached = localStorage.getItem(cacheKey);
@@ -163,4 +166,5 @@
     btn.textContent = btn.dataset.label || '✔️ Interpretado';
     btn.disabled = true;
   });
+
 })();

@@ -1,40 +1,43 @@
 require('dotenv').config();
-const { julian, solar, moonposition, planetposition, data, base } = require('astronomia');
+const { julian, solar, moonposition, base, planetposition } = require('astronomia');
 
-// Planetas com dados internos da biblioteca
-const earth   = new planetposition.Planet(data.vsop87Bearth);
-const mercury = new planetposition.Planet(data.vsop87Bmercury);
-const venus   = new planetposition.Planet(data.vsop87Bvenus);
-const mars    = new planetposition.Planet(data.vsop87Bmars);
-const jupiter = new planetposition.Planet(data.vsop87Bjupiter);
-const saturn  = new planetposition.Planet(data.vsop87Bsaturn);
-const uranus  = new planetposition.Planet(data.vsop87Buranus);
-const neptune = new planetposition.Planet(data.vsop87Bneptune);
+// Importações VSOP87 dos planetas
+const vsop87Bearth    = require('astronomia/data/vsop87Bearth');
+const vsop87Bmercury  = require('astronomia/data/vsop87Bmercury');
+const vsop87Bvenus    = require('astronomia/data/vsop87Bvenus');
+const vsop87Bmars     = require('astronomia/data/vsop87Bmars');
+const vsop87Bjupiter  = require('astronomia/data/vsop87Bjupiter');
+const vsop87Bsaturn   = require('astronomia/data/vsop87Bsaturn');
+const vsop87Buranus   = require('astronomia/data/vsop87Buranus');
+const vsop87Bneptune  = require('astronomia/data/vsop87Bneptune');
 
+// Instâncias planetárias
+const earth   = new planetposition.Planet(vsop87Bearth);
+const mercury = new planetposition.Planet(vsop87Bmercury);
+const venus   = new planetposition.Planet(vsop87Bvenus);
+const mars    = new planetposition.Planet(vsop87Bmars);
+const jupiter = new planetposition.Planet(vsop87Bjupiter);
+const saturn  = new planetposition.Planet(vsop87Bsaturn);
+const uranus  = new planetposition.Planet(vsop87Buranus);
+const neptune = new planetposition.Planet(vsop87Bneptune);
+
+// Utilitários astrológicos
 const DEG = base.RAD2DEG;
-
 const signos = [
   'Áries', 'Touro', 'Gêmeos', 'Câncer', 'Leão', 'Virgem',
   'Libra', 'Escorpião', 'Sagitário', 'Capricórnio', 'Aquário', 'Peixes'
 ];
-
 const planetIcons = {
-  'Sol':      '☀️',
-  'Lua':      '🌙',
-  'Mercúrio': '☿️',
-  'Vênus':    '♀️',
-  'Marte':    '♂️',
-  'Júpiter':  '♃',
-  'Saturno':  '♄',
-  'Urano':    '♅',
-  'Netuno':   '♆'
+  'Sol': '☀️', 'Lua': '🌙', 'Mercúrio': '☿️', 'Vênus': '♀️',
+  'Marte': '♂️', 'Júpiter': '♃', 'Saturno': '♄', 'Urano': '♅', 'Netuno': '♆'
 };
 
 function grauParaSigno(degree) {
   const index = Math.floor(degree / 30) % 12;
-  const signo = signos[index];
-  const grauNoSigno = +(degree % 30).toFixed(2);
-  return { sign: signo, degree: grauNoSigno };
+  return {
+    sign: signos[index],
+    degree: +(degree % 30).toFixed(2)
+  };
 }
 
 function planetGeoLongitude(jd, planet) {
@@ -45,8 +48,8 @@ function planetGeoLongitude(jd, planet) {
 }
 
 function calcularAscendente(jd, lat, lon) {
-  const obliquity = 23.4367;
-  const lst = base.siderealTime(jd) + (lon / 15);
+  const obliquity = 23.4367; // aproximação da obliquidade da eclíptica
+  const lst = base.siderealTime(jd) + (lon / 15); // tempo sideral local
   const lstDeg = base.pmod(lst * 15, 360);
 
   const ascRad = Math.atan2(
@@ -70,10 +73,10 @@ async function obterCoordenadas(local) {
   return geo;
 }
 
+// 🔧 Função principal serverless
 exports.handler = async (event) => {
   try {
-    const dataIn = JSON.parse(event.body || '{}');
-    const { birthDate, birthTime, birthPlace } = dataIn;
+    const { birthDate, birthTime, birthPlace, name } = JSON.parse(event.body || '{}');
 
     if (!birthDate || !birthTime || !birthPlace) {
       return {
@@ -106,19 +109,16 @@ exports.handler = async (event) => {
       { name: 'Netuno',   total: planetGeoLongitude(jd, neptune) }
     ];
 
-    const planets = lista.map(obj => {
-      const { sign, degree } = grauParaSigno(obj.total);
+    const planets = lista.map(({ name, total }) => {
+      const { sign, degree } = grauParaSigno(total);
       return {
-        name: obj.name,
-        icon: planetIcons[obj.name] || '',
-        degree: +obj.total.toFixed(2),
+        name,
+        icon: planetIcons[name] || '',
+        degree: +total.toFixed(2),
         sign,
         signDegree: degree
       };
     });
-
-    console.log('[Astrografia] Planetas calculados:', planets);
-    console.log('[Astrografia] Ascendente:', ascendant);
 
     return {
       statusCode: 200,
