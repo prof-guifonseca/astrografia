@@ -1,11 +1,11 @@
-require('dotenv').config();
-const { OpenAI } = require('openai');
-const { marked } = require('marked');
+import 'dotenv/config';
+import { OpenAI } from 'openai';
+import { marked } from 'marked';
 
-// 🔑 Inicializa OpenAI com chave da API
+// 🔑 Inicializa o cliente da OpenAI
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// 🎯 Tópicos válidos para relatório
+// 🎯 Tópicos aceitos
 const TEMAS = {
   amor:            'vida amorosa',
   carreira:        'vida profissional',
@@ -15,12 +15,12 @@ const TEMAS = {
   desafios:        'desafios e bloqueios pessoais'
 };
 
-// 🚀 Função serverless principal
-exports.handler = async (event) => {
+// 🚀 Função principal para interpretação temática
+export async function handler(event) {
   try {
     const { tema, planetas, nome, ascendant } = JSON.parse(event.body || '{}');
 
-    // 🔍 Validação dos parâmetros
+    // 🔎 Validação
     if (!TEMAS[tema] || !Array.isArray(planetas)) {
       return {
         statusCode: 400,
@@ -31,7 +31,6 @@ exports.handler = async (event) => {
     const foco = TEMAS[tema];
     const nomeLimpo = (nome || 'a pessoa').replace(/[^À-ſ\w \-']/gu, '').trim();
 
-    // 🔭 Monta mapa textual para uso no prompt
     const mapa = planetas
       .map(p => `${p.name} em ${p.sign} (${p.signDegree}°)`)
       .join(', ');
@@ -40,7 +39,6 @@ exports.handler = async (event) => {
       ? `Ascendente em ${ascendant.sign} (${ascendant.degree}°).`
       : '';
 
-    // ✨ Prompt para interpretação
     const prompt = `
 Você é um astrólogo experiente. Com base nas posições planetárias abaixo, escreva um texto breve (1 parágrafo) sobre ${foco} para ${nomeLimpo}:
 
@@ -50,7 +48,6 @@ ${ascText}
 Use linguagem acolhedora, objetiva, inspiradora e sem termos técnicos. Seja sensível, otimista e claro. Responda em Markdown.
     `.trim();
 
-    // 📡 Requisição ao modelo da OpenAI
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
@@ -80,4 +77,4 @@ Use linguagem acolhedora, objetiva, inspiradora e sem termos técnicos. Seja sen
       body: JSON.stringify({ error: 'Erro interno ao gerar interpretação.' })
     };
   }
-};
+}

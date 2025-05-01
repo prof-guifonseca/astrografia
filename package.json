@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "Mapa Astral Personalizado com Ascendente e Interpretações Temáticas via API",
   "type": "module",
-  "main": "index.js",
   "scripts": {
-    "start": "echo 'Use o Netlify CLI ou netlify dev para rodar localmente.'",
+    "start": "netlify dev",
+    "build": "echo 'Funções são gerenciadas pela Netlify Build'",
     "test": "echo \"No tests specified\" && exit 0"
   },
   "keywords": [
@@ -31,5 +31,8 @@
     "marked": "^15.0.11",
     "node-fetch": "^3.3.2",
     "openai": "^4.96.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

@@ -1,17 +1,17 @@
-require('dotenv').config();
-const { julian, solar, moonposition, base, planetposition, sidereal } = require('astronomia');
+import 'dotenv/config';
+import { julian, solar, moonposition, base, planetposition, sidereal } from 'astronomia';
+import fetch from 'node-fetch';
 
-// Importações VSOP87 com require.resolve para garantir bundling
-const vsop87Bearth    = require(require.resolve('astronomia/data/vsop87Bearth'));
-const vsop87Bmercury  = require(require.resolve('astronomia/data/vsop87Bmercury'));
-const vsop87Bvenus    = require(require.resolve('astronomia/data/vsop87Bvenus'));
-const vsop87Bmars     = require(require.resolve('astronomia/data/vsop87Bmars'));
-const vsop87Bjupiter  = require(require.resolve('astronomia/data/vsop87Bjupiter'));
-const vsop87Bsaturn   = require(require.resolve('astronomia/data/vsop87Bsaturn'));
-const vsop87Buranus   = require(require.resolve('astronomia/data/vsop87Buranus'));
-const vsop87Bneptune  = require(require.resolve('astronomia/data/vsop87Bneptune'));
+import vsop87Bearth from 'astronomia/data/vsop87Bearth.js';
+import vsop87Bmercury from 'astronomia/data/vsop87Bmercury.js';
+import vsop87Bvenus from 'astronomia/data/vsop87Bvenus.js';
+import vsop87Bmars from 'astronomia/data/vsop87Bmars.js';
+import vsop87Bjupiter from 'astronomia/data/vsop87Bjupiter.js';
+import vsop87Bsaturn from 'astronomia/data/vsop87Bsaturn.js';
+import vsop87Buranus from 'astronomia/data/vsop87Buranus.js';
+import vsop87Bneptune from 'astronomia/data/vsop87Bneptune.js';
 
-// Instanciando planetas
+// 🌍 Instâncias dos planetas
 const earth   = new planetposition.Planet(vsop87Bearth);
 const mercury = new planetposition.Planet(vsop87Bmercury);
 const venus   = new planetposition.Planet(vsop87Bvenus);
@@ -21,7 +21,7 @@ const saturn  = new planetposition.Planet(vsop87Bsaturn);
 const uranus  = new planetposition.Planet(vsop87Buranus);
 const neptune = new planetposition.Planet(vsop87Bneptune);
 
-// Constantes auxiliares
+// 🔧 Utilitários
 const DEG = base.RAD2DEG;
 const RAD = Math.PI / 180;
 const DEG_FROM_RAD = 180 / Math.PI;
@@ -36,7 +36,6 @@ const planetIcons = {
   'Marte': '♂️', 'Júpiter': '♃', 'Saturno': '♄', 'Urano': '♅', 'Netuno': '♆'
 };
 
-// Conversão de graus para signo astrológico
 function grauParaSigno(degree) {
   const index = Math.floor(degree / 30) % 12;
   return {
@@ -45,7 +44,6 @@ function grauParaSigno(degree) {
   };
 }
 
-// Longitude geocêntrica do planeta
 function planetGeoLongitude(jd, planet) {
   const earthPos = earth.position(jd);
   const planetPos = planet.position(jd);
@@ -53,7 +51,6 @@ function planetGeoLongitude(jd, planet) {
   return base.pmod(lon * DEG, 360);
 }
 
-// Cálculo do ascendente
 function calcularAscendente(jd, lat, lon) {
   const obliquity = 23.4367;
   const lst = sidereal.mean(jd) + (lon / 15);
@@ -70,12 +67,10 @@ function calcularAscendente(jd, lat, lon) {
   return base.pmod(ascRad * DEG_FROM_RAD, 360);
 }
 
-// Consulta à API OpenCage para coordenadas geográficas
 async function obterCoordenadas(local) {
   const key = process.env.OPENCAGE_API_KEY;
   const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(local)}&key=${key}&language=pt&no_annotations=1&limit=1`;
 
-  const fetch = (...args) => import('node-fetch').then(mod => mod.default(...args));
   const res = await fetch(url);
   const json = await res.json();
 
@@ -84,8 +79,8 @@ async function obterCoordenadas(local) {
   return geo;
 }
 
-// 🔧 Função principal Serverless (Netlify)
-exports.handler = async (event) => {
+// 🚀 Função handler principal para Netlify
+export async function handler(event) {
   try {
     const { birthDate, birthTime, birthPlace } = JSON.parse(event.body || '{}');
 
@@ -143,4 +138,4 @@ exports.handler = async (event) => {
       body: JSON.stringify({ error: 'Erro interno no cálculo.' })
     };
   }
-};
+}
