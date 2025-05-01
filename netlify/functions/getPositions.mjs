@@ -1,8 +1,29 @@
 import 'dotenv/config';
-import { julian, solar, moonposition, base, sidereal } from 'astronomia';
-const { earth, mercury, venus, mars, jupiter, saturn, uranus, neptune } = require('astronomia/planetary');
+import { julian, solar, moonposition, planetposition, base, sidereal } from 'astronomia';
 
-// ✅ Importação dinâmica do fetch (para Node)
+// 🔧 Dados VSOP87 importados do pacote planetary
+const {
+  vsop87Bearth,
+  vsop87Bmercury,
+  vsop87Bvenus,
+  vsop87Bmars,
+  vsop87Bjupiter,
+  vsop87Bsaturn,
+  vsop87Buranus,
+  vsop87Bneptune
+} = require('astronomia/planetary');
+
+// 🌍 Instanciação correta dos planetas com os dados VSOP
+const earth   = new planetposition.Planet(vsop87Bearth);
+const mercury = new planetposition.Planet(vsop87Bmercury);
+const venus   = new planetposition.Planet(vsop87Bvenus);
+const mars    = new planetposition.Planet(vsop87Bmars);
+const jupiter = new planetposition.Planet(vsop87Bjupiter);
+const saturn  = new planetposition.Planet(vsop87Bsaturn);
+const uranus  = new planetposition.Planet(vsop87Buranus);
+const neptune = new planetposition.Planet(vsop87Bneptune);
+
+// ✅ Importação dinâmica do fetch (Node)
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 // 🔢 Utilitários matemáticos
@@ -61,7 +82,7 @@ async function obterCoordenadas(local) {
   return geo;
 }
 
-// 🚀 Função serverless principal
+// 🚀 Função Netlify principal
 export async function handler(event) {
   try {
     const { birthDate, birthTime, birthPlace } = JSON.parse(event.body || '{}');
