@@ -26,7 +26,7 @@
   },
   "homepage": "https://astrografia.netlify.app",
   "dependencies": {
-    "astronomia": "^3.0.4",
+    "astronomia": "^4.1.1",
     "dotenv": "^16.5.0",
     "marked": "^15.0.11",
     "node-fetch": "^2.7.0",
