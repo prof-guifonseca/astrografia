@@ -1,19 +1,17 @@
 import 'dotenv/config';
 import { julian, solar, moonposition, planetposition, base, sidereal } from 'astronomia';
 
-import vsop87Bearth    from 'astronomia/data/vsop87Bearth';
-import vsop87Bmercury  from 'astronomia/data/vsop87Bmercury';
-import vsop87Bvenus    from 'astronomia/data/vsop87Bvenus';
-import vsop87Bmars     from 'astronomia/data/vsop87Bmars';
-import vsop87Bjupiter  from 'astronomia/data/vsop87Bjupiter';
-import vsop87Bsaturn   from 'astronomia/data/vsop87Bsaturn';
-import vsop87Buranus   from 'astronomia/data/vsop87Buranus';
-import vsop87Bneptune  from 'astronomia/data/vsop87Bneptune';
+// ⚠️ Os dados VSOP87 são acessados via require() para evitar erro de undefined
+const vsop87Bearth    = require('astronomia/data/vsop87Bearth');
+const vsop87Bmercury  = require('astronomia/data/vsop87Bmercury');
+const vsop87Bvenus    = require('astronomia/data/vsop87Bvenus');
+const vsop87Bmars     = require('astronomia/data/vsop87Bmars');
+const vsop87Bjupiter  = require('astronomia/data/vsop87Bjupiter');
+const vsop87Bsaturn   = require('astronomia/data/vsop87Bsaturn');
+const vsop87Buranus   = require('astronomia/data/vsop87Buranus');
+const vsop87Bneptune  = require('astronomia/data/vsop87Bneptune');
 
-// ✅ Importação dinâmica do fetch (Node.js compatível)
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
-
-// 🌍 Instanciando planetas
+// 🌍 Instanciação dos planetas com efemérides VSOP87
 const earth   = new planetposition.Planet(vsop87Bearth);
 const mercury = new planetposition.Planet(vsop87Bmercury);
 const venus   = new planetposition.Planet(vsop87Bvenus);
@@ -23,7 +21,10 @@ const saturn  = new planetposition.Planet(vsop87Bsaturn);
 const uranus  = new planetposition.Planet(vsop87Buranus);
 const neptune = new planetposition.Planet(vsop87Bneptune);
 
-// 🔢 Utilitários
+// ✅ Importação dinâmica do fetch (para Node)
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+
+// 🔢 Utilitários matemáticos
 const DEG = base.RAD2DEG;
 const RAD = Math.PI / 180;
 const DEG_FROM_RAD = 180 / Math.PI;
@@ -79,7 +80,7 @@ async function obterCoordenadas(local) {
   return geo;
 }
 
-// 🚀 Função Netlify
+// 🚀 Função serverless principal
 export async function handler(event) {
   try {
     const { birthDate, birthTime, birthPlace } = JSON.parse(event.body || '{}');
