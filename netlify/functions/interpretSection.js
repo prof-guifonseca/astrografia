@@ -2,25 +2,22 @@ require('dotenv').config();
 const { OpenAI } = require('openai');
 const { marked } = require('marked');
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Mapeamento frontend → seção interpretativa
 const SECTIONS = {
-  amor:            "vida amorosa",
-  carreira:        "vida profissional",
-  familia:         "relações familiares",
+  amor: "vida amorosa",
+  carreira: "vida profissional",
+  familia: "relações familiares",
   espiritualidade: "caminho espiritual",
-  missao:          "missão de vida",
-  desafios:        "desafios e bloqueios pessoais"
+  missao: "missão de vida",
+  desafios: "desafios e bloqueios pessoais"
 };
 
 exports.handler = async (event) => {
   try {
     const { tema, planetas, nome, ascendant } = JSON.parse(event.body || '{}');
 
-    if (!tema || !Array.isArray(planetas)) {
+    if (!SECTIONS[tema] || !Array.isArray(planetas)) {
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'Parâmetros ausentes ou inválidos.' })
@@ -28,22 +25,10 @@ exports.handler = async (event) => {
     }
 
     const foco = SECTIONS[tema];
-    if (!foco) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Tema desconhecido.' })
-      };
-    }
+    const nomeLimpo = (nome || 'a pessoa').replace(/[^À-ſ\w \-']/gu, '').trim();
 
-    const nomeLimpo = (nome || 'a pessoa').replace(/[^\p{L} \-']/gu, '').trim();
-
-    const mapa = planetas
-      .map(p => `${p.name} em ${p.sign} (${p.signDegree}°)`)
-      .join(', ');
-
-    const ascText = ascendant
-      ? `O ascendente está em ${ascendant.sign} (${ascendant.degree}°).`
-      : '';
+    const mapa = planetas.map(p => `${p.name} em ${p.sign} (${p.signDegree}°)`).join(', ');
+    const ascText = ascendant ? `O ascendente está em ${ascendant.sign} (${ascendant.degree}°).` : '';
 
     const prompt = `
 Você é um astrólogo experiente. Com base nas posições planetárias abaixo, escreva um texto breve (1 parágrafo) sobre ${foco} para ${nomeLimpo}:
@@ -52,8 +37,7 @@ ${mapa}
 
 ${ascText}
 
-Use linguagem acolhedora, objetiva, inspiradora e sem termos técnicos. Responda em Markdown.
-    `.trim();
+Use linguagem acolhedora, objetiva, inspiradora e sem termos técnicos. Responda em Markdown.`.trim();
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
@@ -70,11 +54,7 @@ Use linguagem acolhedora, objetiva, inspiradora e sem termos técnicos. Responda
 
     return {
       statusCode: 200,
-      body: JSON.stringify({
-        html,
-        markdown: interpretation,
-        section: foco
-      })
+      body: JSON.stringify({ html, markdown: interpretation, section: foco })
     };
 
   } catch (err) {

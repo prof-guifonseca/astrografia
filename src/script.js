@@ -76,7 +76,7 @@
       ul.appendChild(li);
     });
 
-    chartEl.innerHTML = '<h3 class="fade-in">🔭 Mapa Astral</h3>';
+    chartEl.innerHTML = '<h3 class="fade-in">🔭 Posições Celestes</h3>';
     chartEl.appendChild(ul);
   }
 
@@ -105,12 +105,12 @@
     dadosGerados = response;
     localStorage.setItem('astroData', JSON.stringify(response));
 
-    summaryEl.textContent = '✅ Posições planetárias calculadas.';
+    summaryEl.textContent = '✅ Posições calculadas com sucesso!';
     exibirPlanetas(response.planets, response.ascendant);
     temasSecao?.classList.remove('hidden');
 
     generateBtn.disabled = false;
-    generateBtn.textContent = 'Gerar Mapa Astral';
+    generateBtn.textContent = 'Obter Posições Celestes';
   });
 
   // Interpretação por seção
@@ -121,14 +121,11 @@
     const tema = btn.dataset.topic;
     const cacheKey = `astroInterpretacao:${tema}`;
 
-    // Remove classe ativa de todos
     document.querySelectorAll('.btn-section').forEach(b => b.classList.remove('btn-section--active'));
     btn.classList.add('btn-section--active');
 
-    // Oculta qualquer interpretação anterior
     reportEl.innerHTML = '';
 
-    // Verifica cache primeiro
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
       reportEl.innerHTML = cached;
@@ -146,7 +143,7 @@
           tema,
           planetas: dadosGerados.planets,
           name: nameEl.value.trim(),
-          ascendant: dadosGerados.ascendant // já disponível
+          ascendant: dadosGerados.ascendant
         })
       });
 

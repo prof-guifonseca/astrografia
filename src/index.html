@@ -6,7 +6,6 @@
   <meta name="theme-color" content="#2C225C" />
   <title>Astrografia 🌌 • Seu Mapa Astral Personalizado</title>
 
-  <!-- Estilos -->
   <link rel="stylesheet" href="assets/styles.css" />
   <link rel="manifest" href="manifest.webmanifest" />
   <script src="script.js" defer></script>
@@ -23,23 +22,23 @@
       <h2 id="form-title">Preencha seus dados astrais</h2>
 
       <label for="name">Nome completo</label>
-      <input type="text" id="name" name="name" placeholder="Ex: Ana Oliveira" autocomplete="name" required />
+      <input type="text" id="name" placeholder="Ex: Ana Oliveira" required />
 
       <label for="birthDate">Data de nascimento</label>
-      <input type="date" id="birthDate" name="birthDate" autocomplete="bday" required />
+      <input type="date" id="birthDate" required />
 
       <label for="birthTime">Hora de nascimento</label>
-      <input type="time" id="birthTime" name="birthTime" autocomplete="off" required />
+      <input type="time" id="birthTime" required />
 
       <label for="birthPlace">Local de nascimento</label>
-      <input type="text" id="birthPlace" name="birthPlace" placeholder="Cidade, Estado" autocomplete="address-level2" required />
+      <input type="text" id="birthPlace" placeholder="Cidade, Estado" required />
 
-      <button id="generateMap" class="btn">Gerar Mapa Astral</button>
+      <button id="generateMap" class="btn">Calcular Posições Planetárias</button>
     </section>
 
     <!-- Resultado do Mapa -->
     <section id="result-section" class="card hidden" aria-labelledby="result-title">
-      <h2 id="result-title">Seu Mapa Astral</h2>
+      <h2 id="result-title">Posições Planetárias</h2>
       <p id="summary"></p>
       <div id="chart-container"></div>
       <div id="report-container" class="report-html"></div>
@@ -47,7 +46,7 @@
     </section>
 
     <!-- Botões Premium -->
-    <section class="section-buttons card hidden" id="premium-sections">
+    <section id="premium-sections" class="section-buttons card hidden">
       <h3>Explorar Relatórios Temáticos</h3>
       <div class="btn-grid">
         <button class="btn-section" data-topic="amor">❤️ Vida Amorosa</button>
@@ -61,12 +60,10 @@
   </main>
 
   <script>
-    // Impressão
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('printReport')?.addEventListener('click', () => window.print());
     });
 
-    // Interpretação Premium
     let dadosGerados = null;
 
     document.addEventListener('click', async (e) => {
@@ -74,8 +71,6 @@
       if (!btn || !dadosGerados) return;
 
       const tema = btn.dataset.topic;
-
-      // Oculta relatório anterior
       document.getElementById('report-container').innerHTML = '';
       document.querySelectorAll('.btn-section').forEach(b => b.disabled = false);
       btn.disabled = true;
@@ -85,7 +80,7 @@
         const res = await fetch('/.netlify/functions/interpretSection', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tema, planetas: dadosGerados })
+          body: JSON.stringify({ tema, planetas: dadosGerados.planets, nome: document.getElementById('name').value })
         });
 
         const json = await res.json();
@@ -98,7 +93,6 @@
       btn.textContent = 'Gerar novamente';
     });
 
-    // Exibe botões após gerar o mapa (gatilho via script.js externo)
     window.revelarBotoesPremium = () => {
       document.getElementById('premium-sections')?.classList.remove('hidden');
     };

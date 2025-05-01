@@ -1,25 +1,15 @@
 require('dotenv').config();
-const { julian, solar, moonposition, planetposition, base } = require('astronomia');
+const { julian, solar, moonposition, planetposition, data, base } = require('astronomia');
 
-// Dados VSOP87 carregados manualmente
-const vsop87Bearth   = require('./ephemerides/vsop87Bearth.json');
-const vsop87Bmercury = require('./ephemerides/vsop87Bmercury.json');
-const vsop87Bvenus   = require('./ephemerides/vsop87Bvenus.json');
-const vsop87Bmars    = require('./ephemerides/vsop87Bmars.json');
-const vsop87Bjupiter = require('./ephemerides/vsop87Bjupiter.json');
-const vsop87Bsaturn  = require('./ephemerides/vsop87Bsaturn.json');
-const vsop87Buranus  = require('./ephemerides/vsop87Buranus.json');
-const vsop87Bneptune = require('./ephemerides/vsop87Bneptune.json');
-
-// Planetas
-const earth   = new planetposition.Planet(vsop87Bearth);
-const mercury = new planetposition.Planet(vsop87Bmercury);
-const venus   = new planetposition.Planet(vsop87Bvenus);
-const mars    = new planetposition.Planet(vsop87Bmars);
-const jupiter = new planetposition.Planet(vsop87Bjupiter);
-const saturn  = new planetposition.Planet(vsop87Bsaturn);
-const uranus  = new planetposition.Planet(vsop87Buranus);
-const neptune = new planetposition.Planet(vsop87Bneptune);
+// Planetas com dados internos da biblioteca
+const earth   = new planetposition.Planet(data.vsop87Bearth);
+const mercury = new planetposition.Planet(data.vsop87Bmercury);
+const venus   = new planetposition.Planet(data.vsop87Bvenus);
+const mars    = new planetposition.Planet(data.vsop87Bmars);
+const jupiter = new planetposition.Planet(data.vsop87Bjupiter);
+const saturn  = new planetposition.Planet(data.vsop87Bsaturn);
+const uranus  = new planetposition.Planet(data.vsop87Buranus);
+const neptune = new planetposition.Planet(data.vsop87Bneptune);
 
 const DEG = base.RAD2DEG;
 

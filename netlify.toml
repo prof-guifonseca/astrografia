@@ -8,10 +8,6 @@
 
 [functions]
   node_bundler = "esbuild"
-  included_files = [
-    "netlify/functions/**",
-    "node_modules/astronomia/data/**"
-  ]
 
 [[redirects]]
   from = "/api/*"
