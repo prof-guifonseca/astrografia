@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { julian, solar, moonposition, base, planetposition } = require('astronomia');
+const { julian, solar, moonposition, base, planetposition, sidereal } = require('astronomia');
 
 // Importações VSOP87 dos planetas
 const vsop87Bearth    = require('astronomia/data/vsop87Bearth');
@@ -49,7 +49,7 @@ function planetGeoLongitude(jd, planet) {
 
 function calcularAscendente(jd, lat, lon) {
   const obliquity = 23.4367; // aproximação da obliquidade da eclíptica
-  const lst = base.siderealTime(jd) + (lon / 15); // tempo sideral local
+  const lst = sidereal.mean(jd) + (lon / 15); // tempo sideral local
   const lstDeg = base.pmod(lst * 15, 360);
 
   const ascRad = Math.atan2(
