@@ -1,25 +1,6 @@
 import 'dotenv/config';
-import { julian, solar, moonposition, planetposition, base, sidereal } from 'astronomia';
-
-// ⚠️ Os dados VSOP87 são acessados via require() para evitar erro de undefined
-const vsop87Bearth    = require('astronomia/data/vsop87Bearth');
-const vsop87Bmercury  = require('astronomia/data/vsop87Bmercury');
-const vsop87Bvenus    = require('astronomia/data/vsop87Bvenus');
-const vsop87Bmars     = require('astronomia/data/vsop87Bmars');
-const vsop87Bjupiter  = require('astronomia/data/vsop87Bjupiter');
-const vsop87Bsaturn   = require('astronomia/data/vsop87Bsaturn');
-const vsop87Buranus   = require('astronomia/data/vsop87Buranus');
-const vsop87Bneptune  = require('astronomia/data/vsop87Bneptune');
-
-// 🌍 Instanciação dos planetas com efemérides VSOP87
-const earth   = new planetposition.Planet(vsop87Bearth);
-const mercury = new planetposition.Planet(vsop87Bmercury);
-const venus   = new planetposition.Planet(vsop87Bvenus);
-const mars    = new planetposition.Planet(vsop87Bmars);
-const jupiter = new planetposition.Planet(vsop87Bjupiter);
-const saturn  = new planetposition.Planet(vsop87Bsaturn);
-const uranus  = new planetposition.Planet(vsop87Buranus);
-const neptune = new planetposition.Planet(vsop87Bneptune);
+import { julian, solar, moonposition, base, sidereal } from 'astronomia';
+const { earth, mercury, venus, mars, jupiter, saturn, uranus, neptune } = require('astronomia/planetary');
 
 // ✅ Importação dinâmica do fetch (para Node)
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
