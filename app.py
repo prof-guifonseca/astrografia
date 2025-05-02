@@ -5,7 +5,11 @@ import datetime
 app = Flask(__name__)
 
 # 📍 Caminho para efemérides internas do Swiss Ephemeris
-swe.set_ephe_path('.')
+swe.set_ephe_path('.')  # ou substitua por um caminho com efemérides externas, se necessário
+
+@app.route('/')
+def index():
+    return 'API do Astrografia online. Use POST /positions.'
 
 @app.route('/positions', methods=['POST'])
 def calcular_posicoes():
@@ -19,7 +23,7 @@ def calcular_posicoes():
         return jsonify({'error': 'Data e hora de nascimento são obrigatórias.'}), 400
 
     try:
-        # 🧮 Conversão de data/hora para juliano
+        # 🧮 Conversão para juliano
         year, month, day = map(int, birth_date.split('-'))
         hour, minute = map(int, birth_time.split(':'))
         decimal_hour = hour + minute / 60
@@ -50,7 +54,6 @@ def calcular_posicoes():
             return signos[index], round(degree % 30, 2)
 
         resultado = []
-
         for nome, pid in planetas.items():
             lon, _ = swe.calc_ut(jd_ut, pid)[0:2]
             signo, grau = grau_para_signo(lon)
