@@ -1,10 +1,10 @@
-// Astrografia 🌌 — Núcleo Consolidado v3.4 (Swiss + GPT + OpenCage)
+// Astrografia 🌌 — Núcleo Consolidado (Render + Flask + Swiss)
 (() => {
   'use strict';
 
   const API = {
     generate: 'https://astrografia.onrender.com/positions',
-    interpretar: '/.netlify/functions/interpretSection'
+    interpretar: 'https://astrografia.onrender.com/interpretar'
   };
 
   const OPENCAGE_KEY = 'b639372a8f024a78b7ad0c15f4f5ea70';
@@ -25,7 +25,7 @@
 
   let dadosGerados = null;
 
-  // 🔄 Recupera cache local
+  // 🔁 Cache local (auto-exibição)
   const astroCache = localStorage.getItem('astroData');
   if (astroCache) {
     try {
@@ -42,7 +42,7 @@
     }
   }
 
-  // 📍 Coordenadas do local via OpenCage
+  // 📍 OpenCage para coordenadas
   async function obterCoordenadas(local) {
     const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(local)}&key=${OPENCAGE_KEY}&language=pt&limit=1`;
     try {
@@ -55,7 +55,7 @@
     }
   }
 
-  // 🚀 Requisição principal ao backend Flask
+  // 🚀 Consulta ao Flask /positions
   async function obterPosicoesPlanetarias(userData) {
     try {
       const res = await fetch(API.generate, {
@@ -71,7 +71,7 @@
     }
   }
 
-  // 🌌 Renderização visual do mapa
+  // 🌌 Exibição dos planetas e ascendente
   function exibirPlanetas(planets = [], ascendant = null) {
     chartEl.innerHTML = '<h3 class="fade-in">🔭 Posições Celestes</h3>';
 
@@ -95,12 +95,12 @@
     chartEl.appendChild(ul);
   }
 
-  // 🧾 Envio do formulário
+  // 🧾 Formulário principal
   formEl.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const name       = nameEl.value.trim();
-    const birthDate  = dateEl.value; // YYYY-MM-DD (garantido pelo input[type=date])
+    const birthDate  = dateEl.value;
     const birthTime  = timeEl.value;
     const birthPlace = placeEl.value.trim();
 
@@ -121,7 +121,7 @@
     if (!coordenadas) {
       alert('Não foi possível localizar o local de nascimento.');
       btn.disabled = false;
-      btn.textContent = 'Obter Mapa Astral';
+      btn.textContent = 'Gerar Mapa Astral';
       return;
     }
 
@@ -139,10 +139,10 @@
     sectionGroup?.classList.remove('hidden');
 
     btn.disabled = false;
-    btn.textContent = 'Obter Mapa Astral';
+    btn.textContent = 'Gerar Mapa Astral';
   });
 
-  // 📖 Botões de relatórios temáticos
+  // 📖 Relatórios Temáticos via /interpretar
   document.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-topic]');
     if (!btn || !dadosGerados) return;
@@ -176,7 +176,7 @@
       });
 
       const json = await res.json();
-      if (json.html) {
+      if (json?.html) {
         reportEl.innerHTML = json.html;
         localStorage.setItem(cacheKey, json.html);
       } else {

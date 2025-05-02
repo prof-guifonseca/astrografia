@@ -1,0 +1,5 @@
+Flask
+flask-cors
+gunicorn
+pyswisseph==2.10.3.2
+openai
