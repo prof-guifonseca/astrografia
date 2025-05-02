@@ -1,4 +1,4 @@
-// Astrografia 🌌 — Núcleo Consolidado v3.3 (Swiss + GPT)
+// Astrografia 🌌 — Núcleo Consolidado v3.4 (Swiss + GPT + OpenCage)
 (() => {
   'use strict';
 
@@ -6,6 +6,8 @@
     generate: 'https://astrografia.onrender.com/positions',
     interpretar: '/.netlify/functions/interpretSection'
   };
+
+  const OPENCAGE_KEY = 'b639372a8f024a78b7ad0c15f4f5ea70';
 
   const $ = s => document.querySelector(s);
 
@@ -23,7 +25,7 @@
 
   let dadosGerados = null;
 
-  // 🔄 Recupera cache salvo
+  // 🔄 Recupera cache local
   const astroCache = localStorage.getItem('astroData');
   if (astroCache) {
     try {
@@ -40,6 +42,20 @@
     }
   }
 
+  // 📍 Coordenadas do local via OpenCage
+  async function obterCoordenadas(local) {
+    const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(local)}&key=${OPENCAGE_KEY}&language=pt&limit=1`;
+    try {
+      const res = await fetch(url);
+      const json = await res.json();
+      return json?.results?.[0]?.geometry || null;
+    } catch (err) {
+      console.error('[Astrografia] Erro ao obter coordenadas:', err);
+      return null;
+    }
+  }
+
+  // 🚀 Requisição principal ao backend Flask
   async function obterPosicoesPlanetarias(userData) {
     try {
       const res = await fetch(API.generate, {
@@ -55,6 +71,7 @@
     }
   }
 
+  // 🌌 Renderização visual do mapa
   function exibirPlanetas(planets = [], ascendant = null) {
     chartEl.innerHTML = '<h3 class="fade-in">🔭 Posições Celestes</h3>';
 
@@ -78,11 +95,12 @@
     chartEl.appendChild(ul);
   }
 
+  // 🧾 Envio do formulário
   formEl.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const name       = nameEl.value.trim();
-    const birthDate  = dateEl.value;
+    const birthDate  = dateEl.value; // YYYY-MM-DD (garantido pelo input[type=date])
     const birthTime  = timeEl.value;
     const birthPlace = placeEl.value.trim();
 
@@ -99,7 +117,19 @@
     reportEl.innerHTML = '';
     resultSection.classList.remove('hidden');
 
-    const response = await obterPosicoesPlanetarias({ name, birthDate, birthTime, birthPlace });
+    const coordenadas = await obterCoordenadas(birthPlace);
+    if (!coordenadas) {
+      alert('Não foi possível localizar o local de nascimento.');
+      btn.disabled = false;
+      btn.textContent = 'Obter Mapa Astral';
+      return;
+    }
+
+    const response = await obterPosicoesPlanetarias({
+      name, birthDate, birthTime, birthPlace,
+      lat: coordenadas.lat,
+      lng: coordenadas.lng
+    });
 
     dadosGerados = response;
     localStorage.setItem('astroData', JSON.stringify(response));
@@ -112,6 +142,7 @@
     btn.textContent = 'Obter Mapa Astral';
   });
 
+  // 📖 Botões de relatórios temáticos
   document.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-topic]');
     if (!btn || !dadosGerados) return;

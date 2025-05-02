@@ -1,49 +1,50 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import swisseph as swe
 import datetime
 
 app = Flask(__name__)
+CORS(app)  # ✅ Libera CORS para chamadas do Netlify ou outros domínios
 
-# 📍 Caminho para efemérides internas do Swiss Ephemeris
-swe.set_ephe_path('.')  # ou substitua por um caminho com efemérides externas, se necessário
+# 📍 Caminho para efemérides
+swe.set_ephe_path('.')  # ou forneça o caminho real com arquivos SE, se necessário
 
 @app.route('/')
 def index():
-    return 'API do Astrografia online. Use POST /positions.'
+    return '🪐 API do Astrografia online. Use POST em /positions.'
 
 @app.route('/positions', methods=['POST'])
 def calcular_posicoes():
     data = request.get_json()
     birth_date = data.get('birthDate')
     birth_time = data.get('birthTime')
-    lat = float(data.get('lat'))
-    lon = float(data.get('lng'))
+    lat = data.get('lat')
+    lon = data.get('lng')
 
-    if not birth_date or not birth_time:
-        return jsonify({'error': 'Data e hora de nascimento são obrigatórias.'}), 400
+    if not birth_date or not birth_time or lat is None or lon is None:
+        return jsonify({'error': 'Parâmetros ausentes: certifique-se de enviar birthDate, birthTime, lat e lng.'}), 400
 
     try:
-        # 🧮 Conversão para juliano
+        # 📆 Conversão de data e hora
         year, month, day = map(int, birth_date.split('-'))
         hour, minute = map(int, birth_time.split(':'))
         decimal_hour = hour + minute / 60
         jd_ut = swe.julday(year, month, day, decimal_hour, swe.GREG_CAL)
 
-        # 🔭 Planetas relevantes
+        # 🔭 Planetas considerados
         planetas = {
             'Sol': swe.SUN, 'Lua': swe.MOON, 'Mercúrio': swe.MERCURY, 'Vênus': swe.VENUS,
             'Marte': swe.MARS, 'Júpiter': swe.JUPITER, 'Saturno': swe.SATURN,
             'Urano': swe.URANUS, 'Netuno': swe.NEPTUNE
         }
 
-        # 🔤 Ícones dos planetas
+        # ✨ Ícones para cada planeta
         icons = {
             'Sol': '☀️', 'Lua': '🌙', 'Mercúrio': '☿️', 'Vênus': '♀️',
             'Marte': '♂️', 'Júpiter': '♃', 'Saturno': '♄',
             'Urano': '♅', 'Netuno': '♆'
         }
 
-        # ♈ Lista de signos
         signos = [
             'Áries', 'Touro', 'Gêmeos', 'Câncer', 'Leão', 'Virgem',
             'Libra', 'Escorpião', 'Sagitário', 'Capricórnio', 'Aquário', 'Peixes'
@@ -55,19 +56,19 @@ def calcular_posicoes():
 
         resultado = []
         for nome, pid in planetas.items():
-            lon, _ = swe.calc_ut(jd_ut, pid)[0:2]
-            signo, grau = grau_para_signo(lon)
+            lon_planeta, _ = swe.calc_ut(jd_ut, pid)[0:2]
+            signo, grau = grau_para_signo(lon_planeta)
             resultado.append({
                 'name': nome,
                 'sign': signo,
-                'degree': round(lon, 2),
+                'degree': round(lon_planeta, 2),
                 'signDegree': grau,
                 'icon': icons.get(nome, '🔹')
             })
 
-        # ☀️ Ascendente
-        casas = swe.houses(jd_ut, lat, lon)
-        asc = casas[0][0]  # Casa 1
+        # ☀️ Cálculo do Ascendente
+        casas = swe.houses(jd_ut, float(lat), float(lon))
+        asc = casas[0][0]
         signo_asc, grau_asc = grau_para_signo(asc)
         ascendente = {
             'sign': signo_asc,
@@ -80,7 +81,7 @@ def calcular_posicoes():
         })
 
     except Exception as e:
-        return jsonify({'error': f'Erro ao calcular: {str(e)}'}), 500
+        return jsonify({'error': f'Erro interno no cálculo: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
