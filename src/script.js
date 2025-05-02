@@ -3,7 +3,7 @@
   'use strict';
 
   const API = {
-    generate: 'https://astrografia.onrender.com',
+    generate: 'https://astrografia.onrender.com/positions',
     interpretar: '/.netlify/functions/interpretSection'
   };
 
