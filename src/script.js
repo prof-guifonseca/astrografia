@@ -1,9 +1,9 @@
-// Astrografia 🌌 — Núcleo Consolidado v3.2 (preciso + discreto)
+// Astrografia 🌌 — Núcleo Consolidado v3.3 (Swiss + GPT)
 (() => {
   'use strict';
 
   const API = {
-    generate: '/.netlify/functions/getPositions',
+    generate: 'https://seu-backend-render.onrender.com/positions', // ⬅️ Atualize aqui após deploy
     interpretar: '/.netlify/functions/interpretSection'
   };
 
@@ -23,7 +23,7 @@
 
   let dadosGerados = null;
 
-  // 🔄 Recupera cache local
+  // 🔄 Recupera cache salvo
   const astroCache = localStorage.getItem('astroData');
   if (astroCache) {
     try {
@@ -40,7 +40,6 @@
     }
   }
 
-  // 🚀 Requisição ao backend
   async function obterPosicoesPlanetarias(userData) {
     try {
       const res = await fetch(API.generate, {
@@ -56,7 +55,6 @@
     }
   }
 
-  // 🌌 Renderização das posições celestes
   function exibirPlanetas(planets = [], ascendant = null) {
     chartEl.innerHTML = '<h3 class="fade-in">🔭 Posições Celestes</h3>';
 
@@ -69,22 +67,17 @@
     ul.classList.add('report-html');
 
     if (ascendant?.sign) {
-      const ascLi = document.createElement('li');
-      ascLi.innerHTML = `🌅 Ascendente: <strong>${ascendant.sign}</strong> ${Number(ascendant.degree).toFixed(1)}°`;
-      ul.appendChild(ascLi);
+      ul.innerHTML += `<li>🌅 Ascendente: <strong>${ascendant.sign}</strong> ${Number(ascendant.degree).toFixed(1)}°</li>`;
     }
 
     planets.forEach(p => {
       const grau = typeof p.degree === 'number' ? `${p.degree.toFixed(1)}°` : '?°';
-      const li = document.createElement('li');
-      li.textContent = `${p.icon || '🔹'} ${p.name}: ${p.sign} ${grau}`;
-      ul.appendChild(li);
+      ul.innerHTML += `<li>${p.icon || '🔹'} ${p.name}: ${p.sign} ${grau}</li>`;
     });
 
     chartEl.appendChild(ul);
   }
 
-  // 🧾 Evento: envio do formulário
   formEl.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -101,7 +94,7 @@
     const btn = $('#generateMap');
     btn.disabled = true;
     btn.textContent = '⌛ Gerando...';
-    summaryEl.textContent = 'Aguarde, consultando as posições com precisão...';
+    summaryEl.textContent = 'Calculando posições com alta precisão...';
     chartEl.innerHTML = '';
     reportEl.innerHTML = '';
     resultSection.classList.remove('hidden');
@@ -119,7 +112,6 @@
     btn.textContent = 'Obter Mapa Astral';
   });
 
-  // 📖 Evento: clique em relatório temático
   document.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-topic]');
     if (!btn || !dadosGerados) return;
