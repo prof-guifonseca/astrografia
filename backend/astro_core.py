@@ -1,9 +1,11 @@
 import swisseph as swe
+import os
 
-# 📍 Caminho para efemérides locais
-swe.set_ephe_path('.')
+# 📍 Caminho absoluto para efemérides — evita falhas no ambiente do Render
+ephe_path = os.path.dirname(os.path.abspath(__file__))
+swe.set_ephe_path(ephe_path)
 
-# ♈ Lista de signos fixada fora da função
+# ♈ Lista de signos
 SIGNOS = [
     'Áries', 'Touro', 'Gêmeos', 'Câncer', 'Leão', 'Virgem',
     'Libra', 'Escorpião', 'Sagitário', 'Capricórnio', 'Aquário', 'Peixes'

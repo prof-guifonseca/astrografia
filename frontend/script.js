@@ -3,8 +3,8 @@
   'use strict';
 
   const API = {
-    generate: 'https://astrografia.onrender.com/positions',
-    interpretar: 'https://astrografia.onrender.com/interpretar'
+    generate: 'https://astrografia-1.onrender.com/positions',
+    interpretar: 'https://astrografia-1.onrender.com/interpretar'
   };
 
   const OPENCAGE_KEY = 'b639372a8f024a78b7ad0c15f4f5ea70';
