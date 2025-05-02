@@ -3,7 +3,7 @@
   'use strict';
 
   const API = {
-    generate: 'https://seu-backend-render.onrender.com/positions', // ⬅️ Atualize aqui após deploy
+    generate: 'https://astrografia.onrender.com',
     interpretar: '/.netlify/functions/interpretSection'
   };
 
