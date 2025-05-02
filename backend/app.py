@@ -1,60 +1,99 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-from astro_core import calcular_mapa
-from gpt_interpreter import interpretar_mapa
-import traceback
+import swisseph as swe
+import os
 
-app = Flask(__name__)
-CORS(app)
+# 📍 Caminho absoluto para efemérides (compatível com Render)
+ephe_path = os.path.dirname(os.path.abspath(__file__))
+swe.set_ephe_path(ephe_path)
 
-@app.route('/', methods=['GET'])
-def index():
-    return '🪐 API do Astrografia online. Use POST em /positions ou /interpretar.'
+# ♈ Lista de signos
+SIGNOS = [
+    'Áries', 'Touro', 'Gêmeos', 'Câncer', 'Leão', 'Virgem',
+    'Libra', 'Escorpião', 'Sagitário', 'Capricórnio', 'Aquário', 'Peixes'
+]
 
-@app.route('/positions', methods=['POST', 'OPTIONS'])
-def positions():
-    if request.method == 'OPTIONS':
-        return '', 200
+# 🪐 Planetas principais
+PLANETAS = {
+    'Sol': swe.SUN, 'Lua': swe.MOON, 'Mercúrio': swe.MERCURY, 'Vênus': swe.VENUS,
+    'Marte': swe.MARS, 'Júpiter': swe.JUPITER, 'Saturno': swe.SATURN,
+    'Urano': swe.URANUS, 'Netuno': swe.NEPTUNE
+}
 
-    data = request.get_json()
+# ✨ Ícones planetários
+ICONS = {
+    'Sol': '☀️', 'Lua': '🌙', 'Mercúrio': '☿️', 'Vênus': '♀️',
+    'Marte': '♂️', 'Júpiter': '♃', 'Saturno': '♄',
+    'Urano': '♅', 'Netuno': '♆'
+}
 
-    required_fields = ['birthDate', 'birthTime', 'lat', 'lng']
-    if not all(data.get(field) for field in required_fields):
-        return jsonify({'error': 'Parâmetros ausentes: birthDate, birthTime, lat e lng são obrigatórios.'}), 400
+def grau_para_signo(degree):
+    """Converte grau absoluto em signo + grau relativo."""
+    if not isinstance(degree, (float, int)):
+        raise TypeError(f"Grau inválido: {degree}")
+    index = int(degree // 30) % 12
+    return SIGNOS[index], round(degree % 30, 2)
+
+def calcular_mapa(birth_date, birth_time, lat, lon):
+    """
+    Calcula as posições dos planetas e ascendente com base na data, hora e coordenadas.
+
+    Args:
+        birth_date (str): 'YYYY-MM-DD'
+        birth_time (str): 'HH:MM'
+        lat (float): Latitude
+        lon (float): Longitude
+
+    Returns:
+        dict: {'planets': [...], 'ascendant': {...}}
+    """
+    # ✅ Validação básica de entrada
+    if not all([birth_date, birth_time, isinstance(lat, (float, int)), isinstance(lon, (float, int))]):
+        raise ValueError("Parâmetros inválidos ou incompletos para o cálculo.")
 
     try:
-        mapa = calcular_mapa(
-            data['birthDate'],
-            data['birthTime'],
-            float(data['lat']),
-            float(data['lng'])
-        )
-        return jsonify(mapa)
-
+        year, month, day = map(int, birth_date.split('-'))
+        hour, minute = map(int, birth_time.split(':'))
     except Exception as e:
-        print('🛑 Erro em /positions:\n', traceback.format_exc())
-        return jsonify({'error': 'Erro interno ao calcular o mapa astral.'}), 500
+        raise ValueError("Data ou hora em formato inválido. Use YYYY-MM-DD e HH:MM.") from e
 
-@app.route('/interpretar', methods=['POST', 'OPTIONS'])
-def interpretar():
-    if request.method == 'OPTIONS':
-        return '', 200
+    decimal_hour = hour + minute / 60
+    jd_ut = swe.julday(year, month, day, decimal_hour, swe.GREG_CAL)
 
-    data = request.get_json()
-    tema = data.get('tema')
-    planetas = data.get('planetas')
-    nome = data.get('nome')
-    ascendente = data.get('ascendant')
+    resultado = []
 
-    if not all([tema, planetas, nome, ascendente]):
-        return jsonify({'error': 'Parâmetros incompletos para interpretação.'}), 400
+    # 🔭 Cálculo das posições planetárias
+    for nome, pid in PLANETAS.items():
+        try:
+            pos = swe.calc_ut(jd_ut, pid)[0]  # [longitude, latitude, distancia]
+            lon_planeta = pos[0]
+            signo, grau = grau_para_signo(lon_planeta)
+            resultado.append({
+                'name': nome,
+                'sign': signo,
+                'degree': round(lon_planeta, 2),
+                'signDegree': grau,
+                'icon': ICONS.get(nome, '🔹')
+            })
+        except Exception as e:
+            print(f"⚠️ Erro ao calcular {nome}: {e}")
+            continue
 
+    # 🌅 Cálculo do Ascendente
     try:
-        texto = interpretar_mapa(tema, planetas, nome, ascendente)
-        return jsonify({'html': f"<div class='report-html'><p>{texto}</p></div>"})
+        casas = swe.houses(jd_ut, float(lat), float(lon))
+        asc = casas[0][0]
+        signo_asc, grau_asc = grau_para_signo(asc)
+        ascendente = {
+            'sign': signo_asc,
+            'degree': round(grau_asc, 2)
+        }
     except Exception as e:
-        print('🛑 Erro em /interpretar:\n', traceback.format_exc())
-        return jsonify({'error': 'Erro interno ao gerar interpretação astrológica.'}), 500
+        print(f"⚠️ Erro ao calcular ascendente: {e}")
+        ascendente = {
+            'sign': 'Desconhecido',
+            'degree': 0.0
+        }
 
-if __name__ == '__main__':
-    app.run(debug=True)
+    return {
+        'planets': resultado,
+        'ascendant': ascendente
+    }
