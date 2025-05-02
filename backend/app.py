@@ -1,24 +1,24 @@
 import swisseph as swe
 import os
 
-# 📍 Caminho absoluto para efemérides (compatível com Render)
+# 📍 Caminho absoluto para efemérides — essencial para produção (Render)
 ephe_path = os.path.dirname(os.path.abspath(__file__))
 swe.set_ephe_path(ephe_path)
 
-# ♈ Lista de signos
+# ♈ Lista fixa de signos zodiacais
 SIGNOS = [
     'Áries', 'Touro', 'Gêmeos', 'Câncer', 'Leão', 'Virgem',
     'Libra', 'Escorpião', 'Sagitário', 'Capricórnio', 'Aquário', 'Peixes'
 ]
 
-# 🪐 Planetas principais
+# 🪐 Planetas considerados
 PLANETAS = {
     'Sol': swe.SUN, 'Lua': swe.MOON, 'Mercúrio': swe.MERCURY, 'Vênus': swe.VENUS,
     'Marte': swe.MARS, 'Júpiter': swe.JUPITER, 'Saturno': swe.SATURN,
     'Urano': swe.URANUS, 'Netuno': swe.NEPTUNE
 }
 
-# ✨ Ícones planetários
+# ✨ Ícones correspondentes
 ICONS = {
     'Sol': '☀️', 'Lua': '🌙', 'Mercúrio': '☿️', 'Vênus': '♀️',
     'Marte': '♂️', 'Júpiter': '♃', 'Saturno': '♄',
@@ -26,7 +26,7 @@ ICONS = {
 }
 
 def grau_para_signo(degree):
-    """Converte grau absoluto em signo + grau relativo."""
+    """Converte grau absoluto em (signo, grau relativo)."""
     if not isinstance(degree, (float, int)):
         raise TypeError(f"Grau inválido: {degree}")
     index = int(degree // 30) % 12
@@ -34,20 +34,23 @@ def grau_para_signo(degree):
 
 def calcular_mapa(birth_date, birth_time, lat, lon):
     """
-    Calcula as posições dos planetas e ascendente com base na data, hora e coordenadas.
+    Calcula posições planetárias e o ascendente com base em data/hora/local.
 
     Args:
         birth_date (str): 'YYYY-MM-DD'
         birth_time (str): 'HH:MM'
-        lat (float): Latitude
-        lon (float): Longitude
+        lat (float): Latitude (-90 a 90)
+        lon (float): Longitude (-180 a 180)
 
     Returns:
-        dict: {'planets': [...], 'ascendant': {...}}
+        dict: {
+            'planets': [{ name, sign, degree, signDegree, icon }],
+            'ascendant': { sign, degree }
+        }
     """
-    # ✅ Validação básica de entrada
+    # 🛡️ Validação básica de entrada
     if not all([birth_date, birth_time, isinstance(lat, (float, int)), isinstance(lon, (float, int))]):
-        raise ValueError("Parâmetros inválidos ou incompletos para o cálculo.")
+        raise ValueError("Parâmetros inválidos ou incompletos.")
 
     try:
         year, month, day = map(int, birth_date.split('-'))
@@ -60,10 +63,10 @@ def calcular_mapa(birth_date, birth_time, lat, lon):
 
     resultado = []
 
-    # 🔭 Cálculo das posições planetárias
+    # 🔭 Cálculo dos planetas
     for nome, pid in PLANETAS.items():
         try:
-            pos = swe.calc_ut(jd_ut, pid)[0]  # [longitude, latitude, distancia]
+            pos = swe.calc_ut(jd_ut, pid)[0]  # Retorna [longitude, latitude, distância]
             lon_planeta = pos[0]
             signo, grau = grau_para_signo(lon_planeta)
             resultado.append({
@@ -80,7 +83,7 @@ def calcular_mapa(birth_date, birth_time, lat, lon):
     # 🌅 Cálculo do Ascendente
     try:
         casas = swe.houses(jd_ut, float(lat), float(lon))
-        asc = casas[0][0]
+        asc = casas[0][0]  # Primeiro valor da primeira casa = ascendente
         signo_asc, grau_asc = grau_para_signo(asc)
         ascendente = {
             'sign': signo_asc,
