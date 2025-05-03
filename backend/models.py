@@ -2,12 +2,12 @@ from src import db, bcrypt # Import db e bcrypt do __init__
 from datetime import datetime, timezone
 
 class User(db.Model):
-    __tablename__ = 'users' # Boa prática definir nome da tabela
+    __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False, index=True) # Trocado para email, adicionado index
+    email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(256), nullable=False)
-    perspectives = db.relationship('Perspective', backref='author', lazy=True, cascade="all, delete-orphan") # Adicionado cascade
+    perspectives = db.relationship('Perspective', backref='author', lazy=True, cascade="all, delete-orphan")
 
     def set_password(self, password):
         self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
@@ -16,17 +16,20 @@ class User(db.Model):
         return bcrypt.check_password_hash(self.password_hash, password)
 
     def __repr__(self):
-        return f'<User {self.email}>' # Atualizado para email
+        return f'<User {self.email}>'
 
 class Perspective(db.Model):
     __tablename__ = 'perspectives'
 
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(120), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), index=True) # Adicionado index
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False) # Atualizado para users.id
+    # Substituído title/content por text
+    text = db.Column(db.Text, nullable=False)
+    # Adicionado campo para resposta da interpretação
+    response_md = db.Column(db.Text, nullable=True) # Permite nulo inicialmente
+    created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     def __repr__(self):
-        return f'<Perspective {self.title}>'
+        # Atualizado para mostrar o início do texto
+        return f'<Perspective {self.id} by User {self.user_id}>'
 
