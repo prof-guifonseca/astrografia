@@ -1,44 +1,35 @@
 # -*- coding: utf-8 -*-
-from flask import Blueprint, request, jsonify
-import time
-import traceback
 import os
-import functools # Import functools for lru_cache
-from kerykeion import AstrologicalSubject, KERYKEION_EPHEMERIS_PATH # Import KERYKEION_EPHEMERIS_PATH
+import time
+import logging
+import traceback
+import functools
 from datetime import datetime
-import pytz # Para validação de timezone
+from flask import Blueprint, request, jsonify
+from kerykeion import AstrologicalSubject
+import pytz
 
-# Define o caminho para as efemérides dentro do diretório src
-# Isso pode ser sobrescrito pela variável de ambiente KEPHEMERIS_PATH se definida
+# Logger para produção
+logger = logging.getLogger(__name__)
+
+astro_bp = Blueprint("astro_bp", __name__)
+
+# --- Efemérides: fallback para execução local ---
 MODULE_EPHE_PATH = os.path.join(os.path.dirname(__file__), "ephe")
-
-# Define o caminho que Kerykeion usará, priorizando a variável de ambiente
-# Kerykeion usa kerykeion.KERYKEION_EPHEMERIS_PATH por padrão, que pode ser setado.
-# Vamos tentar setar programaticamente se a variável de ambiente existir.
 ephe_path_from_env = os.environ.get("KEPHEMERIS_PATH")
+
 if ephe_path_from_env and os.path.isdir(ephe_path_from_env):
-    # Kerykeion não tem uma função set_ephemeris_path direta documentada publicamente,
-    # mas podemos tentar definir a variável global que ele usa internamente.
-    # Isso é um pouco hacky e pode quebrar em futuras versões do Kerykeion.
-    # Uma abordagem mais segura seria verificar se Kerykeion lê a variável de ambiente.
-    # Pela análise do código Kerykeion (v4.26.2), ele lê KERYKEION_EPHEMERIS_PATH.
-    # Apenas garantir que a variável de ambiente seja definida (no Dockerfile/ambiente) é suficiente.
-    print(f"Usando KEPHEMERIS_PATH do ambiente: {ephe_path_from_env}")
-    # kerykeion.KERYKEION_EPHEMERIS_PATH = ephe_path_from_env # Não é necessário se a env var for lida
-elif os.path.isdir(MODULE_EPHE_PATH):
-    print(f"Variável KEPHEMERIS_PATH não definida ou inválida, tentando usar caminho local: {MODULE_EPHE_PATH}")
-    # Define a variável global para Kerykeion usar o caminho local se a env var não estiver definida
-    # Isso garante que funcione localmente mesmo sem a env var
-    os.environ["KERYKEION_EPHEMERIS_PATH"] = MODULE_EPHE_PATH 
-    # Atualiza a variável interna do Kerykeion para refletir a mudança
-    import kerykeion
-    kerykeion.KERYKEION_EPHEMERIS_PATH = MODULE_EPHE_PATH
+    logger.info(f"Usando efemérides do ambiente: {ephe_path_from_env}")
 else:
-    print("AVISO: Diretório de efemérides local não encontrado e KEPHEMERIS_PATH não definido/inválido. Kerykeion usará seu padrão.")
+    if os.path.isdir(MODULE_EPHE_PATH):
+        os.environ["KERYKEION_EPHEMERIS_PATH"] = MODULE_EPHE_PATH
+        import kerykeion
+        kerykeion.KERYKEION_EPHEMERIS_PATH = MODULE_EPHE_PATH
+        logger.info(f"Efemérides locais carregadas de {MODULE_EPHE_PATH}")
+    else:
+        logger.warning("Efemérides não encontradas. Usando configuração padrão do Kerykeion.")
 
-astro_bp = Blueprint("astro_bp", __name__) # Removido url_prefix
-
-# --- Constantes Astrológicas (mantidas) --- 
+# --- Constantes ---
 SIGNOS_MAP = {
     "Ari": "Áries", "Tau": "Touro", "Gem": "Gêmeos", "Can": "Câncer", 
     "Leo": "Leão", "Vir": "Virgem", "Lib": "Libra", "Sco": "Escorpião", 
@@ -51,196 +42,104 @@ PLANET_NAMES_KERYKEION = [
 ICONS = {
     "Sun": "☀️", "Moon": "🌙", "Mercury": "☿️", "Venus": "♀️",
     "Mars": "♂️", "Jupiter": "♃", "Saturn": "♄",
-    "Uranus": "♅", "Neptune": "♆",
-    "Pluto": "♇", 
-    "Ascendant": "As", 
-    "Midheaven": "Mc"
+    "Uranus": "♅", "Neptune": "♆", "Pluto": "♇",
+    "Ascendant": "As", "Midheaven": "Mc"
 }
 
-# --- Cálculo Astrológico Principal com Kerykeion (Refinado com Cache) --- 
-
-# Aplicando cache LRU à função de cálculo principal
-# O tamanho do cache (maxsize) pode ser ajustado conforme necessário
+# --- Serviço de cálculo ---
 @functools.lru_cache(maxsize=1024)
 def calcular_mapa_kerykeion(name, year, month, day, hour, minute, lat, lon, tz_str, city="N/A"):
-    """Calcula o mapa astral usando Kerykeion com cache. Requer coordenadas e timezone explícitos."""
-    start_time = time.time()
-    print(f"Calculando mapa (sem cache ou cache miss) para: {name}, {year}-{month}-{day} {hour}:{minute}, lat:{lat}, lon:{lon}, tz:{tz_str}")
     try:
-        # Validação adicional dos parâmetros numéricos
-        if not (isinstance(year, int) and isinstance(month, int) and isinstance(day, int) and 
-                isinstance(hour, int) and isinstance(minute, int) and 
-                isinstance(lat, float) and isinstance(lon, float)):
-            raise ValueError("Tipos de dados inválidos para cálculo.")
-            
-        # Kerykeion usará o KERYKEION_EPHEMERIS_PATH definido globalmente ou via env var
         subject = AstrologicalSubject(name, year, month, day, hour, minute, lat=lat, lng=lon, tz_str=tz_str, city=city)
 
         planets_data = []
-        for planet_name in PLANET_NAMES_KERYKEION:
-            try:
-                planet_obj = getattr(subject, planet_name.lower())
+        for planet in PLANET_NAMES_KERYKEION:
+            obj = getattr(subject, planet.lower(), None)
+            if obj:
                 planets_data.append({
-                    "name": planet_obj.name,
-                    "sign": planet_obj.sign,
-                    "sign_name": SIGNOS_MAP.get(planet_obj.sign, planet_obj.sign),
-                    "degree": round(planet_obj.abs_pos, 4),
-                    "sign_degree": round(planet_obj.position, 2),
-                    "element": planet_obj.element,
-                    "quality": planet_obj.quality,
-                    "retrograde": planet_obj.retrograde,
-                    "icon": ICONS.get(planet_obj.name, "🔹")
+                    "name": obj.name,
+                    "sign": obj.sign,
+                    "sign_name": SIGNOS_MAP.get(obj.sign, obj.sign),
+                    "degree": round(obj.abs_pos, 4),
+                    "sign_degree": round(obj.position, 2),
+                    "element": obj.element,
+                    "quality": obj.quality,
+                    "retrograde": obj.retrograde,
+                    "icon": ICONS.get(obj.name, "🔹")
                 })
-            except AttributeError:
-                print(f"Aviso: Atributo para planeta {planet_name} não encontrado em Kerykeion.")
-            except Exception as planet_e:
-                 print(f"Erro ao processar planeta {planet_name}: {planet_e}")
-                 traceback.print_exc()
-        
-        # Cálculo do Ascendente e Casas
-        try:
-            asc_obj = subject.first_house
-            ascendant_data = {
-                "sign": asc_obj.sign,
-                "sign_name": SIGNOS_MAP.get(asc_obj.sign, asc_obj.sign),
-                "degree": round(asc_obj.position % 30, 2),
-                "abs_degree": round(asc_obj.position, 4)
-            }
-        except Exception as asc_e:
-            print(f"Erro ao obter Ascendente: {asc_e}")
-            traceback.print_exc()
-            raise ValueError(f"Falha ao calcular Ascendente: {asc_e}")
 
-        houses_data = []
-        house_attrs = [
-            "first_house", "second_house", "third_house", "fourth_house",
-            "fifth_house", "sixth_house", "seventh_house", "eighth_house",
-            "ninth_house", "tenth_house", "eleventh_house", "twelfth_house"
-        ]
-        for i, attr_name in enumerate(house_attrs):
-            try:
-                house_obj = getattr(subject, attr_name)
-                houses_data.append({
-                    "house": i + 1,
-                    "sign": house_obj.sign,
-                    "sign_name": SIGNOS_MAP.get(house_obj.sign, house_obj.sign),
-                    "degree": round(house_obj.position % 30, 2),
-                    "abs_degree": round(house_obj.position, 4)
+        asc = subject.first_house
+        ascendant = {
+            "sign": asc.sign,
+            "sign_name": SIGNOS_MAP.get(asc.sign, asc.sign),
+            "degree": round(asc.position % 30, 2),
+            "abs_degree": round(asc.position, 4)
+        }
+
+        houses = []
+        for i in range(1, 13):
+            attr = f"{['first','second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth','eleventh','twelfth'][i-1]}_house"
+            casa = getattr(subject, attr, None)
+            if casa:
+                houses.append({
+                    "house": i,
+                    "sign": casa.sign,
+                    "sign_name": SIGNOS_MAP.get(casa.sign, casa.sign),
+                    "degree": round(casa.position % 30, 2),
+                    "abs_degree": round(casa.position, 4)
                 })
-            except AttributeError:
-                 print(f"Aviso: Atributo para casa {i+1} ({attr_name}) não encontrado.")
-                 raise ValueError(f"Falha ao calcular Casa {i+1}")
-            except Exception as house_e:
-                 print(f"Erro ao processar casa {i+1}: {house_e}")
-                 traceback.print_exc()
-                 raise ValueError(f"Falha ao calcular Casa {i+1}: {house_e}")
-
-        end_time = time.time()
-        print(f"Tempo de cálculo Kerykeion (real): {end_time - start_time:.4f}s")
 
         return {
             "planets": planets_data,
-            "ascendant": ascendant_data,
-            "houses": houses_data
+            "ascendant": ascendant,
+            "houses": houses
         }
 
-    except pytz.exceptions.UnknownTimeZoneError:
-        print(f"Erro: Timezone desconhecida fornecida: {tz_str}")
-        raise ValueError(f"Timezone inválida ou desconhecida: 
-'{tz_str}\". Use um formato padrão (ex: \'America/Sao_Paulo\').")
-    except ValueError as ve:
-        print(f"Erro de valor durante cálculo Kerykeion: {ve}")
-        raise ve 
+    except pytz.UnknownTimeZoneError:
+        raise ValueError(f"Timezone inválida ou desconhecida: '{tz_str}'. Use formato IANA (ex: 'America/Sao_Paulo').")
     except Exception as e:
-        print(f"Erro CRÍTICO inesperado ao calcular mapa com Kerykeion: {e}")
-        traceback.print_exc()
+        logger.error("Erro ao calcular mapa astrológico", exc_info=True)
         raise RuntimeError(f"Erro interno no cálculo astrológico: {e}")
 
-# --- Endpoint Astrológico (Refinado) --- 
-
+# --- Rota GET /positions ---
 @astro_bp.route("/positions", methods=["GET"])
 def get_positions():
-    start_request_time = time.time()
-    
-    # Parâmetros Obrigatórios
-    birth_date_str = request.args.get("date")
-    birth_time_str = request.args.get("time")
-    lat_str = request.args.get("lat")
-    lon_str = request.args.get("lon")
-    tz_str = request.args.get("tz")
-    city = request.args.get("city", "N/A") # Opcional
+    start = time.time()
 
-    # --- Validação Rigorosa dos Parâmetros --- 
-    required_params = {
-        "date": birth_date_str,
-        "time": birth_time_str,
-        "lat": lat_str,
-        "lon": lon_str,
-        "tz": tz_str
-    }
-    missing_params = [key for key, value in required_params.items() if value is None or value.strip() == ""]
-    if missing_params:
-        return jsonify({"error": f"Parâmetros obrigatórios ausentes: {', '.join(missing_params)}"}), 400
+    # 🧾 Parâmetros obrigatórios
+    date_str  = request.args.get("date")
+    time_str  = request.args.get("time")
+    lat_str   = request.args.get("lat")
+    lon_str   = request.args.get("lon")
+    tz_str    = request.args.get("tz")
+    city      = request.args.get("city", "N/A")
+
+    # 🧪 Validação
+    missing = [k for k, v in {"date": date_str, "time": time_str, "lat": lat_str, "lon": lon_str, "tz": tz_str}.items() if not v]
+    if missing:
+        return jsonify({"error": f"Parâmetros obrigatórios ausentes: {', '.join(missing)}"}), 400
 
     try:
-        # Validações (mantidas como antes)
-        try:
-            birth_date = datetime.strptime(birth_date_str, "%Y-%m-%d")
-            year, month, day = birth_date.year, birth_date.month, birth_date.day
-        except ValueError:
-            raise ValueError("Formato de data inválido. Use YYYY-MM-DD.")
-        try:
-            birth_time = datetime.strptime(birth_time_str, "%H:%M")
-            hour, minute = birth_time.hour, birth_time.minute
-        except ValueError:
-            raise ValueError("Formato de hora inválido. Use HH:MM.")
-        try:
-            lat = float(lat_str)
-            if not (-90 <= lat <= 90):
-                raise ValueError("Latitude fora do intervalo [-90, 90].")
-        except ValueError:
-            raise ValueError("Latitude inválida. Deve ser um número.")
-        try:
-            lon = float(lon_str)
-            if not (-180 <= lon <= 180):
-                raise ValueError("Longitude fora do intervalo [-180, 180].")
-        except ValueError:
-            raise ValueError("Longitude inválida. Deve ser um número.")
-        try:
-            pytz.timezone(tz_str)
-        except pytz.exceptions.UnknownTimeZoneError:
-            raise ValueError(f"Timezone inválida ou desconhecida: 
-'{tz_str}\". Use um formato padrão IANA (ex: \'America/Sao_Paulo\').")
+        birth_date = datetime.strptime(date_str, "%Y-%m-%d")
+        birth_time = datetime.strptime(time_str, "%H:%M")
+        year, month, day = birth_date.year, birth_date.month, birth_date.day
+        hour, minute = birth_time.hour, birth_time.minute
+        lat, lon = float(lat_str), float(lon_str)
+        pytz.timezone(tz_str)  # validação
 
     except ValueError as ve:
         return jsonify({"error": f"Parâmetro inválido: {ve}"}), 400
-    except Exception as e:
-        print(f"Erro inesperado ao processar parâmetros: {e}")
-        traceback.print_exc()
-        return jsonify({"error": "Erro interno ao processar parâmetros da requisição."}), 500
+    except pytz.UnknownTimeZoneError:
+        return jsonify({"error": f"Timezone inválida ou desconhecida: '{tz_str}'. Use formato IANA (ex: 'America/Sao_Paulo')."}), 400
 
-    # --- Chamada para Cálculo Astrológico --- 
     try:
-        # Chama a função cacheada
-        mapa_astral = calcular_mapa_kerykeion(
-            name="AstrografiaUser", 
-            year=year, month=month, day=day, 
-            hour=hour, minute=minute, 
-            lat=lat, lon=lon, tz_str=tz_str,
-            city=city
-        )
-        
-        end_request_time = time.time()
-        # Log para verificar se o cache foi usado (tempo deve ser muito baixo em hits)
-        print(f"Tempo total da requisição /positions (incluindo possível cache hit): {end_request_time - start_request_time:.4f}s")
-        return jsonify(mapa_astral)
-
+        mapa = calcular_mapa_kerykeion("AstrografiaUser", year, month, day, hour, minute, lat, lon, tz_str, city)
+        logger.info(f"Mapa calculado com sucesso em {(time.time() - start):.3f}s")
+        return jsonify(mapa)
     except ValueError as ve:
         return jsonify({"error": f"Erro no cálculo: {ve}"}), 400
     except RuntimeError as re:
         return jsonify({"error": f"Erro interno no servidor durante o cálculo: {re}"}), 500
     except Exception as e:
-        print(f"Erro inesperado ao chamar calcular_mapa_kerykeion: {e}") 
-        traceback.print_exc()
-        return jsonify({"error": "Erro interno inesperado no servidor."}), 500
-
+        logger.error("Erro inesperado ao calcular mapa", exc_info=True)
+        return jsonify({"error": "Erro inesperado no servidor."}), 500

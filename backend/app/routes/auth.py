@@ -1,79 +1,77 @@
 # -*- coding: utf-8 -*-
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
-from src import bcrypt, db # Import bcrypt e db de src/__init__.py
-from src.models.models import User # Importa User
+import logging
 import traceback
+from flask import Blueprint, request, jsonify
+from flask_jwt_extended import (
+    create_access_token, create_refresh_token,
+    jwt_required, get_jwt_identity
+)
+from app import bcrypt, db
+from app.models.models import User
 
-auth_bp = Blueprint("auth_bp", __name__) # Removido url_prefix daqui, será definido no registro
+logger = logging.getLogger(__name__)
+auth_bp = Blueprint("auth_bp", __name__)
 
 @auth_bp.route("/register", methods=["POST"])
 def register():
-    email = request.json.get("email", None) # Alterado para email
-    password = request.json.get("password", None)
+    email = request.json.get("email")
+    password = request.json.get("password")
+
     if not email or not password:
-        return jsonify({"msg": "Email e senha são obrigatórios"}), 400
+        return jsonify({"message": "Email e senha são obrigatórios"}), 400
 
-    existing_user = User.query.filter_by(email=email).first() # Filtrar por email
-    if existing_user:
-        return jsonify({"msg": "Email já cadastrado"}), 409
-
-    # Usa o bcrypt importado de src
-    new_user = User(email=email) # Cria usuário com email
-    new_user.set_password(password) # Define a senha usando o método do modelo (que usa bcrypt)
+    if User.query.filter_by(email=email).first():
+        return jsonify({"message": "Email já cadastrado"}), 409
 
     try:
+        new_user = User(email=email)
+        new_user.set_password(password)
         db.session.add(new_user)
         db.session.commit()
-        print(f"Usuário registrado no DB: {email}")
-        return jsonify({"msg": "Usuário registrado com sucesso"}), 201
+        logger.info("Usuário registrado com sucesso: %s", email)
+        return jsonify({"message": "Usuário registrado com sucesso"}), 201
     except Exception as e:
         db.session.rollback()
-        print(f"Erro ao registrar usuário no DB: {e}")
-        traceback.print_exc()
-        return jsonify({"msg": "Erro interno ao registrar usuário"}), 500
+        logger.error("Erro ao registrar usuário: %s", e, exc_info=True)
+        return jsonify({"message": "Erro interno ao registrar usuário"}), 500
 
 @auth_bp.route("/login", methods=["POST"])
 def login():
-    email = request.json.get("email", None) # Alterado para email
-    password = request.json.get("password", None)
+    email = request.json.get("email")
+    password = request.json.get("password")
+
     if not email or not password:
-        return jsonify({"msg": "Email e senha são obrigatórios"}), 400
+        return jsonify({"message": "Email e senha são obrigatórios"}), 400
 
-    user = User.query.filter_by(email=email).first() # Filtrar por email
+    user = User.query.filter_by(email=email).first()
 
-    # Usa o método check_password do modelo (que usa bcrypt)
     if user and user.check_password(password):
-        identity_str = str(user.id) # Usa o ID do usuário como identidade no token
-        access_token = create_access_token(identity=identity_str)
-        refresh_token = create_refresh_token(identity=identity_str)
-        print(f"Login bem-sucedido para ID: {user.id} ({email}), Identity: {identity_str}")
-        return jsonify(access_token=access_token, refresh_token=refresh_token)
+        identity = str(user.id)
+        access_token = create_access_token(identity=identity)
+        refresh_token = create_refresh_token(identity=identity)
+        logger.info("Login bem-sucedido: %s (ID %s)", email, identity)
+        return jsonify(access_token=access_token, refresh_token=refresh_token), 200
     else:
-        print(f"Falha no login para: {email}")
-        return jsonify({"msg": "Credenciais inválidas"}), 401
+        logger.warning("Falha de login para: %s", email)
+        return jsonify({"message": "Credenciais inválidas"}), 401
 
 @auth_bp.route("/refresh", methods=["POST"])
 @jwt_required(refresh=True)
 def refresh():
-    identity_str = get_jwt_identity()
-    access_token = create_access_token(identity=identity_str)
-    print(f"Token atualizado para Identity: {identity_str}")
+    identity = get_jwt_identity()
+    access_token = create_access_token(identity=identity)
+    logger.info("Token renovado para ID: %s", identity)
     return jsonify(access_token=access_token)
 
-# Rota protegida para teste (opcional, pode ser removida ou movida)
 @auth_bp.route("/protected", methods=["GET"])
 @jwt_required()
 def protected():
-    current_user_identity = get_jwt_identity()
+    identity = get_jwt_identity()
     try:
-        current_user_id = int(current_user_identity)
+        user_id = int(identity)
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"message": "Usuário não encontrado"}), 404
+        return jsonify(logged_in_as=user.email, user_id=user_id), 200
     except ValueError:
-        return jsonify({"msg": "Identidade inválida no token"}), 422
-
-    user = User.query.get(current_user_id)
-    if not user:
-        return jsonify({"msg": "Usuário não encontrado"}), 404
-    # Retorna o email
-    return jsonify(logged_in_as=user.email, user_id=current_user_id), 200
-
+        return jsonify({"message": "Identidade inválida no token"}), 422

@@ -8,8 +8,8 @@
 
   <meta name="description" content="Descubra seu mapa astral completo com interpretações temáticas acolhedoras e precisas, baseadas na sua data, hora e local de nascimento." />
 
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/styles.css" />
-  <link rel="manifest" href="manifest.webmanifest" />
   <script src="script.js" defer></script>
 </head>
 <body>
@@ -42,7 +42,7 @@
         <label for="birthPlace">Local de nascimento</label>
         <input type="text" id="birthPlace" name="birthPlace" placeholder="Cidade, Estado" required />
 
-        <button id="generateMap" class="btn" type="submit">Obter Mapa Astral</button>
+        <button id="generateMap" class="btn" type="submit">Gerar Mapa Astral</button>
       </form>
     </section>
 
@@ -65,6 +65,17 @@
         <button class="btn-section" data-topic="missao">🚀 Missão de Vida</button>
         <button class="btn-section" data-topic="desafios">⚖️ Desafios Pessoais</button>
       </div>
+    </section>
+
+    <!-- Perspectiva Pessoal -->
+    <section id="perspective-section" class="card hidden" aria-labelledby="perspective-title">
+      <h3 id="perspective-title">Envie sua Perspectiva Pessoal 🌱</h3>
+      <p>Escreva um pensamento, sensação ou dúvida atual. A astrologia pode iluminar esse momento à luz do seu mapa natal.</p>
+
+      <textarea id="perspective-text" placeholder="O que você está sentindo hoje?" rows="5" required></textarea>
+      <button id="submit-perspective" class="btn" type="button">Interpretar Minha Perspectiva</button>
+
+      <div id="perspective-result" class="report-html"></div>
     </section>
   </main>
 </body>

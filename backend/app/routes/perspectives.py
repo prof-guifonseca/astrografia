@@ -1,92 +1,94 @@
 # -*- coding: utf-8 -*-
-from flask import Blueprint, request, jsonify, current_app
+import logging
+from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from src.models.models import db, User, Perspective
-from src.routes.interpret import interpret_perspective_text # Importar função (placeholder)
-import traceback
+from app.models.models import db, User, Perspective
+from app.routes.interpret import interpret_perspective_text
 
-perspectives_bp = Blueprint("perspectives_bp", __name__) # Prefixo definido no registro
+logger = logging.getLogger(__name__)
+perspectives_bp = Blueprint("perspectives_bp", __name__)
 
 @perspectives_bp.route("", methods=["GET", "POST"])
 @jwt_required()
 def handle_perspectives():
-    current_user_identity = get_jwt_identity()
+    """
+    Rota principal para manipulação de perspectivas.
+    - POST: Adiciona uma nova perspectiva e gera interpretação.
+    - GET: Retorna lista paginada das perspectivas do usuário autenticado.
+    """
     try:
-        current_user_id = int(current_user_identity)
+        user_id = int(get_jwt_identity())
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"message": "Usuário não encontrado para esta ação"}), 404
     except ValueError:
-        return jsonify({"msg": "Identidade inválida no token"}), 422
-
-    user = User.query.get(current_user_id)
-    if not user:
-        return jsonify({"msg": "Usuário não encontrado para esta ação"}), 404
+        return jsonify({"message": "Identidade inválida no token"}), 422
+    except Exception as e:
+        logger.error("Erro ao recuperar identidade do usuário", exc_info=True)
+        return jsonify({"message": "Erro interno na autenticação"}), 500
 
     if request.method == "POST":
-        # Alterado para receber 'text'
-        text = request.json.get("text", None)
+        text = request.json.get("text")
         if not text:
-            return jsonify({"msg": "Campo \'text\' é obrigatório para adicionar perspectiva."}), 400
+            return jsonify({"message": "Campo 'text' é obrigatório para adicionar perspectiva."}), 400
 
-        # Cria a perspectiva com o novo campo 'text'
         new_perspective = Perspective(text=text, author=user)
-        
-        # Chama a função de interpretação (placeholder)
+
         try:
-            interpretation_md = interpret_perspective_text(text, user) # Passa o texto e o usuário
-            new_perspective.response_md = interpretation_md # Salva a resposta
+            interpretation_md = interpret_perspective_text(text, user)
+            new_perspective.response_md = interpretation_md
         except Exception as interp_e:
-            # Loga o erro mas continua, salvando a perspectiva sem interpretação por enquanto
-            print(f"Erro ao chamar interpretação para User ID {current_user_id}: {interp_e}")
-            traceback.print_exc()
+            logger.error("Erro ao interpretar perspectiva do User ID %s: %s", user_id, interp_e, exc_info=True)
             new_perspective.response_md = "Erro ao gerar interpretação."
 
         try:
             db.session.add(new_perspective)
             db.session.commit()
-            print(f"Perspectiva adicionada ao DB para User ID: {current_user_id}")
+            logger.info("Perspectiva adicionada para User ID: %s", user_id)
             return jsonify({
-                "msg": "Perspectiva adicionada com sucesso.", 
+                "message": "Perspectiva adicionada com sucesso.",
                 "perspective": {
                     "id": new_perspective.id,
                     "text": new_perspective.text,
-                    "response_md": new_perspective.response_md, # Retorna a resposta
+                    "response_md": new_perspective.response_md,
                     "created_at": new_perspective.created_at.isoformat()
                 }
             }), 201
-        except Exception as e:
+        except Exception as db_e:
             db.session.rollback()
-            print(f"Erro ao adicionar perspectiva ao DB: {e}")
-            traceback.print_exc()
-            return jsonify({"msg": "Erro interno ao salvar perspectiva"}), 500
+            logger.error("Erro ao salvar perspectiva no DB: %s", db_e, exc_info=True)
+            return jsonify({"message": "Erro interno ao salvar perspectiva"}), 500
 
     elif request.method == "GET":
-        # Implementação de paginação básica
         page = request.args.get("page", 1, type=int)
-        per_page = request.args.get("per_page", 10, type=int)
-        
-        # Garante que per_page não seja excessivo
-        per_page = min(per_page, 50) 
+        per_page = min(request.args.get("per_page", 10, type=int), 50)
 
-        pagination = Perspective.query.filter_by(user_id=current_user_id)\
-                                    .order_by(Perspective.created_at.desc())\
-                                    .paginate(page=page, per_page=per_page, error_out=False)
+        try:
+            pagination = Perspective.query.filter_by(user_id=user_id)\
+                .order_by(Perspective.created_at.desc())\
+                .paginate(page=page, per_page=per_page, error_out=False)
 
-        perspectives_list = [
-            {
-                "id": p.id, 
-                "text": p.text, 
-                "response_md": p.response_md,
-                "created_at": p.created_at.isoformat()
-            }
-            for p in pagination.items
-        ]
-        print(f"Perspectivas recuperadas (página {page}) do DB para User ID: {current_user_id}")
-        return jsonify({
-            "perspectives": perspectives_list,
-            "total": pagination.total,
-            "pages": pagination.pages,
-            "current_page": page,
-            "per_page": per_page,
-            "has_next": pagination.has_next,
-            "has_prev": pagination.has_prev
-        })
+            perspectives_list = [
+                {
+                    "id": p.id,
+                    "text": p.text,
+                    "response_md": p.response_md,
+                    "created_at": p.created_at.isoformat()
+                }
+                for p in pagination.items
+            ]
 
+            logger.info("Perspectivas listadas (página %s) para User ID: %s", page, user_id)
+            return jsonify({
+                "perspectives": perspectives_list,
+                "total": pagination.total,
+                "pages": pagination.pages,
+                "current_page": page,
+                "per_page": per_page,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev
+            })
+
+        except Exception as query_error:
+            logger.error("Erro ao consultar perspectivas: %s", query_error, exc_info=True)
+            return jsonify({"message": "Erro ao recuperar perspectivas"}), 500
