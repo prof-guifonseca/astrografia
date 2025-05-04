@@ -4,14 +4,14 @@ FROM python:3.11-slim
 # 📁 Define o diretório de trabalho dentro do contêiner
 WORKDIR /app
 
-# 📜 Copia o arquivo de dependências
-COPY requirements.txt .
+# 📜 Copia apenas requirements para cache de dependências
+COPY requirements.txt ./
 
 # 🔧 Instala pip atualizado e as dependências do projeto
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# 📦 Copia todo o conteúdo da pasta backend para /app
+# 📦 Copia o conteúdo restante do backend (estamos dentro da pasta /backend)
 COPY . .
 
 # 🧭 Define o diretório atual como raiz dos módulos Python
@@ -20,5 +20,5 @@ ENV PYTHONPATH=/app
 # 🚪 Expõe a porta usada pelo Gunicorn
 EXPOSE 5000
 
-# 🚀 Inicia o servidor com Gunicorn usando main.py
-CMD ["gunicorn", "main:create_app", "--bind", "0.0.0.0:5000"]
+# 🚀 Inicia o servidor Flask com Gunicorn apontando para o app no main.py
+CMD ["gunicorn", "main:app", "--bind", "0.0.0.0:5000"]
