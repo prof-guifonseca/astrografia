@@ -7,9 +7,9 @@ services:
     ports:
       - "5000:5000"
     env_file:
-      - ./backend/app/.env
+      - ./backend/.env
     environment:
       - PYTHONPATH=/app
     volumes:
-      - ./backend/app/ephe:/app/ephe
+      - ./backend/ephe:/app/ephe
     restart: unless-stopped

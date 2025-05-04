@@ -9,25 +9,25 @@ from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
-# 🔧 Instâncias globais de extensões
+# 🔧 Extensões globais
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 migrate = Migrate()
 jwt = JWTManager()
 
-# 📦 Importações ajustadas com base na nova estrutura
-from app.auth import auth_bp
-from app.perspectives import perspectives_bp
-from app.interpret import interpret_bp
-from app.astro_utils import astro_bp
+# 📦 Importações locais
+from auth import auth_bp
+from perspectives import perspectives_bp
+from interpret import interpret_bp
+from astro_utils import astro_bp
 
-# 🔐 Variáveis do .env (em dev)
+# 🔐 Carrega variáveis do .env em desenvolvimento
 if os.environ.get("FLASK_ENV") != "production":
     from dotenv import load_dotenv
     dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
     load_dotenv(dotenv_path=dotenv_path)
 
-# ♻️ Configurações
+# ♻️ Configurações da aplicação
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "default-secret-key")
     JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "default-jwt-secret-key")
@@ -122,7 +122,7 @@ def create_app(config_name=None):
         origins = [origin.strip() for origin in cors_origins.split(",")]
         CORS(app, resources={r"/api/*": {"origins": origins}})
 
-    # 🧩 Registro direto dos blueprints
+    # 🧩 Registro de Blueprints
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(perspectives_bp, url_prefix="/api/perspectives")
     app.register_blueprint(interpret_bp, url_prefix="/api/interpret")
