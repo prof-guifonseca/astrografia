@@ -11,14 +11,14 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# 📦 Copia todo o conteúdo do projeto para dentro do contêiner
+# 📦 Copia todo o conteúdo da pasta backend para /app
 COPY . .
 
-# 🧭 Garante que o Python reconheça o diretório backend como raiz de módulos
-ENV PYTHONPATH=/app/backend
+# 🧭 Define o diretório atual como raiz dos módulos Python
+ENV PYTHONPATH=/app
 
-# 🚪 Expõe a porta que o Gunicorn usará
+# 🚪 Expõe a porta usada pelo Gunicorn
 EXPOSE 5000
 
-# 🚀 Inicia o app usando Gunicorn, com diretório backend como raiz
-CMD ["gunicorn", "main:create_app", "--chdir", "backend", "--bind", "0.0.0.0:5000"]
+# 🚀 Inicia o servidor com Gunicorn usando main.py
+CMD ["gunicorn", "main:create_app", "--bind", "0.0.0.0:5000"]
