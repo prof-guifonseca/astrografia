@@ -17,8 +17,9 @@ COPY app/ ./app
 # 🧭 Define o diretório atual como raiz dos módulos Python
 ENV PYTHONPATH=/app
 
-# 🚪 Exponha a porta usada pelo Render (boa prática)
+# 🚪 Porta padrão exposta (boa prática para Render)
 EXPOSE 5000
 
-# 🚀 Inicia o servidor Flask com Gunicorn, apontando para app.main:app
-CMD ["gunicorn", "app.main:app", "--bind", "0.0.0.0:$PORT"]
+# 🚀 Inicia o servidor Flask com Gunicorn
+# Usa porta dinâmica via $PORT se definida (Render), senão fallback para 5000
+CMD sh -c 'exec gunicorn app.main:app --bind 0.0.0.0:${PORT:-5000}'
