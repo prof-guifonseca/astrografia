@@ -6,11 +6,11 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_bcrypt import Bcrypt
 
-from app.config import config_by_name
-from app.models import db
-from app.routes.auth import auth_bp
-from app.routes.perspectives import perspectives_bp
-from app.routes.astro import astro_bp
+from models import db
+from config import config_by_name
+from routes.auth import auth_bp
+from routes.perspectives import perspectives_bp
+from routes.astro import astro_bp
 
 # Inicialização global
 bcrypt = Bcrypt()
@@ -24,10 +24,11 @@ def create_app():
     app.config.from_object(config_class)
 
     # CORS
-    if app.config["CORS_ORIGINS"] == "*":
+    cors_config = app.config.get("CORS_ORIGINS", "*")
+    if cors_config == "*":
         CORS(app)
     else:
-        origins = [origin.strip() for origin in app.config["CORS_ORIGINS"].split(",")]
+        origins = [o.strip() for o in cors_config.split(",")]
         CORS(app, resources={r"/*": {"origins": origins}})
 
     # Inicializações
@@ -36,11 +37,11 @@ def create_app():
     JWTManager(app)
 
     # Blueprints
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(perspectives_bp)
-    app.register_blueprint(astro_bp)
+    app.register_blueprint(auth_bp, url_prefix="/api/auth")
+    app.register_blueprint(perspectives_bp, url_prefix="/api/perspectives")
+    app.register_blueprint(astro_bp, url_prefix="/api/astro")
 
-    # CLI para criar tabelas
+    # CLI para criar tabelas (útil em dev)
     @app.cli.command("create-db")
     def create_db_command():
         with app.app_context():
@@ -59,4 +60,8 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     app = create_app()
     port = int(os.environ.get("PORT", 5000))
-    app.run(debug=(os.environ.get("FLASK_ENV") != "production"), host="0.0.0.0", port=port)
+    app.run(
+        debug=(os.environ.get("FLASK_ENV") != "production"),
+        host="0.0.0.0",
+        port=port
+    )
