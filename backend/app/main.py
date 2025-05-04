@@ -15,11 +15,11 @@ bcrypt = Bcrypt()
 migrate = Migrate()
 jwt = JWTManager()
 
-# 📦 Importações de rotas diretas
-from auth import auth_bp
-from perspectives import perspectives_bp
-from interpret import interpret_bp
-from astro_utils import astro_bp
+# 📦 Importações ajustadas com base na nova estrutura
+from app.auth import auth_bp
+from app.perspectives import perspectives_bp
+from app.interpret import interpret_bp
+from app.astro_utils import astro_bp
 
 # 🔐 Variáveis do .env (em dev)
 if os.environ.get("FLASK_ENV") != "production":

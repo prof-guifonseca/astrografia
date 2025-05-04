@@ -11,14 +11,14 @@ COPY app/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# 📦 Copia apenas o conteúdo da pasta app/
-COPY app/ .
+# 📦 Copia o restante da aplicação
+COPY app/ ./app
 
 # 🧭 Define o diretório atual como raiz dos módulos Python
 ENV PYTHONPATH=/app
 
-# 🚪 Expõe a porta usada pelo Render (boa prática)
+# 🚪 Exponha a porta usada pelo Render (boa prática)
 EXPOSE 5000
 
-# 🚀 Inicia o servidor Flask com Gunicorn na porta dinâmica do Render
-CMD ["sh", "-c", "gunicorn main:app --bind 0.0.0.0:$PORT"]
+# 🚀 Inicia o servidor Flask com Gunicorn, apontando para app.main:app
+CMD ["gunicorn", "app.main:app", "--bind", "0.0.0.0:$PORT"]
