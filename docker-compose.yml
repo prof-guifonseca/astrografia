@@ -1,15 +1,17 @@
+version: "3.9"  # Boa prática: defina explicitamente a versão do Compose
+
 services:
   backend:
-    build:
-      context: ./backend             # O contexto do build agora é a pasta do backend
-      dockerfile: Dockerfile         # O Dockerfile está dentro da própria pasta backend
-    ports:
-      - "5000:5000"
-    env_file:
-      - ./backend/.env               # Carrega as variáveis de ambiente do backend
-    volumes:
-      - ./backend/ephe:/app/ephe     # Monta as efemérides dentro do contêiner
     container_name: astrografia_backend
-    restart: unless-stopped
+    build:
+      context: ./backend             # Diretório onde está o Dockerfile e o app
+      dockerfile: Dockerfile         # Nome do Dockerfile dentro da pasta backend
+    ports:
+      - "5000:5000"                  # Mapeia porta local:container
+    env_file:
+      - ./backend/.env              # Variáveis de ambiente carregadas
     environment:
-      - PYTHONPATH=/app              # Agora /app é o backend no contêiner
+      - PYTHONPATH=/app             # Importante para permitir imports relativos
+    volumes:
+      - ./backend/ephe:/app/ephe    # Persistência de efemérides
+    restart: unless-stopped         # Reinício automático, exceto se parar manualmente

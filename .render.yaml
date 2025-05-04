@@ -3,6 +3,8 @@ services:
     name: astrografia-api
     env: docker
     plan: free
-    region: oregon  # ou frankfurt, se preferir menor latência na Europa
+    region: oregon  # ou frankfurt
     rootDir: backend
     dockerfilePath: Dockerfile
+    ports:
+      - 5000
