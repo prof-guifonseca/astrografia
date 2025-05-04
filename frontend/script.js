@@ -1,4 +1,4 @@
-// Astrografia 🌌 — Núcleo Consolidado (Render + Flask + Kerykeion)
+// Astrografia 🌌 — Versão Alinhada com Backend Flask
 (() => {
   'use strict';
 
@@ -59,17 +59,12 @@
   }
 
   async function obterPosicoesPlanetarias(userData) {
-    const params = new URLSearchParams({
-      date: userData.birthDate,
-      time: userData.birthTime,
-      lat: userData.lat,
-      lon: userData.lon,
-      tz: userData.tz,
-      city: userData.birthPlace || 'N/A'
-    });
-
     try {
-      const res = await fetch(`${API.generate}?${params.toString()}`);
+      const res = await fetch(API.generate, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData)
+      });
       if (!res.ok) throw new Error('Erro na requisição');
       return await res.json();
     } catch (err) {
