@@ -3,28 +3,28 @@
   'use strict';
 
   const API = {
-    generate: 'https://astrografia-1.onrender.com/positions',
-    interpretar: 'https://astrografia-1.onrender.com/interpretar',
-    perspectiva: 'https://astrografia-1.onrender.com/perspectives'
+    generate: 'https://astrografia.onrender.com/positions',
+    interpretar: 'https://astrografia.onrender.com/interpretar',
+    perspectiva: 'https://astrografia.onrender.com/perspectives'
   };
 
   const OPENCAGE_KEY = 'b639372a8f024a78b7ad0c15f4f5ea70';
 
   const $ = s => document.querySelector(s);
 
-  const formEl         = $('#astro-form');
-  const nameEl         = $('#name');
-  const dateEl         = $('#birthDate');
-  const timeEl         = $('#birthTime');
-  const placeEl        = $('#birthPlace');
-  const resultSection  = $('#result-section');
-  const summaryEl      = $('#summary');
-  const chartEl        = $('#chart-container');
-  const reportEl       = $('#report-container');
-  const sectionBtns    = document.querySelectorAll('.btn-section');
-  const sectionGroup   = $('#section-buttons');
+  const formEl = $('#astro-form');
+  const nameEl = $('#name');
+  const dateEl = $('#birthDate');
+  const timeEl = $('#birthTime');
+  const placeEl = $('#birthPlace');
+  const resultSection = $('#result-section');
+  const summaryEl = $('#summary');
+  const chartEl = $('#chart-container');
+  const reportEl = $('#report-container');
+  const sectionBtns = document.querySelectorAll('.btn-section');
+  const sectionGroup = $('#section-buttons');
   const perspectiveSec = $('#perspective-section');
-  const perspectiveEl  = $('#perspective-text');
+  const perspectiveEl = $('#perspective-text');
   const submitPerspectiveBtn = $('#submit-perspective');
   const perspectiveResult = $('#perspective-result');
 
@@ -105,9 +105,9 @@
   formEl.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const name       = nameEl.value.trim();
-    const birthDate  = dateEl.value;
-    const birthTime  = timeEl.value;
+    const name = nameEl.value.trim();
+    const birthDate = dateEl.value;
+    const birthTime = timeEl.value;
     const birthPlace = placeEl.value.trim();
 
     if (!name || !birthDate || !birthTime || !birthPlace) {
