@@ -6,36 +6,37 @@ from flask_jwt_extended import JWTManager
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from datetime import timedelta
 
 from app.config import config_by_name
 
-# Inicialização das extensões (sem app ainda)
+# Extensões globais
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 migrate = Migrate()
+jwt = JWTManager()
 
 def create_app(config_name=None):
-    """Application Factory"""
+    """Factory principal da aplicação Flask (Astrografia API)."""
     config_name = config_name or os.getenv("FLASK_ENV", "default")
     
     app = Flask(__name__)
     app.config.from_object(config_by_name[config_name])
 
-    # Inicializar extensões
+    # Inicialização das extensões
     db.init_app(app)
     bcrypt.init_app(app)
-    JWTManager(app)
+    jwt.init_app(app)
     migrate.init_app(app, db)
 
-    # CORS (com fallback seguro)
+    # Configuração de CORS
     cors_origins = app.config.get("CORS_ORIGINS", "*")
     if cors_origins == "*":
         CORS(app)
     else:
-        CORS(app, resources={r"/api/*": {"origins": cors_origins.split(",")}})
+        origins = [origin.strip() for origin in cors_origins.split(",")]
+        CORS(app, resources={r"/api/*": {"origins": origins}})
 
-    # Blueprints
+    # Registro de Blueprints
     from app.routes.auth import auth_bp
     from app.routes.perspectives import perspectives_bp
     from app.routes.astro import astro_bp
@@ -46,17 +47,18 @@ def create_app(config_name=None):
     app.register_blueprint(astro_bp, url_prefix="/api/astro")
     app.register_blueprint(interpret_bp, url_prefix="/api/interpret")
 
-    # Comando CLI opcional para criação total (útil em dev)
+    # Comando CLI para desenvolvimento (criação de tabelas)
     @app.cli.command("create-all-tables")
     def create_all_tables():
+        """Cria todas as tabelas com base nos modelos declarados."""
         with app.app_context():
-            print("Creating all database tables...")
+            print("📦 Criando todas as tabelas do banco de dados...")
             db.create_all()
-            print("Done.")
+            print("✅ Tabelas criadas com sucesso.")
 
-    # Rota de teste
+    # Rota de verificação
     @app.route("/")
     def home():
-        return "Astrografia API está no ar!"
+        return "🌌 Astrografia API está no ar!"
 
     return app

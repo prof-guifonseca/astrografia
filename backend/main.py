@@ -6,11 +6,11 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_bcrypt import Bcrypt
 
-from models import db
-from config import config_by_name
-from routes.auth import auth_bp
-from routes.perspectives import perspectives_bp
-from routes.astro import astro_bp
+from app.models import db
+from app.config import config_by_name
+from app.routes.auth import auth_bp
+from app.routes.perspectives import perspectives_bp
+from app.routes.astro import astro_bp
 
 # Inicialização global
 bcrypt = Bcrypt()
@@ -41,7 +41,7 @@ def create_app():
     app.register_blueprint(perspectives_bp, url_prefix="/api/perspectives")
     app.register_blueprint(astro_bp, url_prefix="/api/astro")
 
-    # CLI para criar tabelas (útil em dev)
+    # CLI para criação do banco de dados
     @app.cli.command("create-db")
     def create_db_command():
         with app.app_context():
