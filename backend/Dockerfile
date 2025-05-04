@@ -4,15 +4,15 @@ FROM python:3.11-slim
 # 📁 Define o diretório de trabalho dentro do contêiner
 WORKDIR /app
 
-# 📜 Copia apenas requirements para cache de dependências
-COPY requirements.txt ./
+# 📜 Copia apenas o arquivo de dependências
+COPY app/requirements.txt ./requirements.txt
 
-# 🔧 Instala pip atualizado e as dependências do projeto
+# 🔧 Instala pip atualizado e as dependências
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# 📦 Copia o conteúdo restante do backend (estamos dentro da pasta /backend)
-COPY . .
+# 📦 Copia apenas o conteúdo da pasta app/
+COPY app/ .
 
 # 🧭 Define o diretório atual como raiz dos módulos Python
 ENV PYTHONPATH=/app
