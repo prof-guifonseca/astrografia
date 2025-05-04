@@ -1,4 +1,4 @@
-# 🔧 Framework e extensões Flask
+# 🔧 Flask e extensões
 Flask==3.1.0
 Flask-Bcrypt==1.0.1
 Flask-Cors==5.0.1
@@ -6,10 +6,10 @@ Flask-JWT-Extended==4.7.1
 Flask-SQLAlchemy==3.1.1
 Flask-Migrate==4.0.5
 
-# 🚀 Servidor WSGI
+# 🚀 WSGI Server
 gunicorn==23.0.0
 
-# 🔐 Utilitários e segurança
+# 🔐 Segurança e variáveis de ambiente
 bcrypt==4.3.0
 python-dotenv==1.1.0
 PyJWT==2.10.1
