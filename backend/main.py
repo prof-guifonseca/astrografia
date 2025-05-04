@@ -15,11 +15,9 @@ bcrypt = Bcrypt()
 migrate = Migrate()
 jwt = JWTManager()
 
-# 📦 Importações locais
-from auth import auth_bp
-from perspectives import perspectives_bp
-from interpret import interpret_bp
-from astro_utils import astro_bp
+# 📦 Importações locais (ajustado conforme consolidação)
+from core import core_bp
+from astro_untils import astro_bp
 
 # 🔐 Carrega variáveis do .env em desenvolvimento
 if os.environ.get("FLASK_ENV") != "production":
@@ -64,46 +62,6 @@ config_by_name = {
     "default": DevelopmentConfig,
 }
 
-# 👤 Modelo de Usuário
-class User(db.Model):
-    __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False, index=True)
-    password_hash = db.Column(db.String(256), nullable=False)
-
-    perspectives = db.relationship(
-        'Perspective',
-        backref='author',
-        lazy=True,
-        cascade="all, delete-orphan"
-    )
-
-    def set_password(self, password: str) -> None:
-        self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
-
-    def check_password(self, password: str) -> bool:
-        return bcrypt.check_password_hash(self.password_hash, password)
-
-    def __repr__(self) -> str:
-        return f'<User {self.email}>'
-
-# 💬 Modelo de Perspectiva
-class Perspective(db.Model):
-    __tablename__ = 'perspectives'
-    id = db.Column(db.Integer, primary_key=True)
-    text = db.Column(db.Text, nullable=False)
-    response_md = db.Column(db.Text, nullable=True)
-    created_at = db.Column(
-        db.DateTime,
-        nullable=False,
-        default=lambda: datetime.now(timezone.utc),
-        index=True
-    )
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-
-    def __repr__(self) -> str:
-        return f'<Perspective {self.id} by User {self.user_id}>'
-
 # 🚀 Factory principal
 def create_app(config_name=None):
     config_name = config_name or os.getenv("FLASK_ENV", "default")
@@ -122,10 +80,8 @@ def create_app(config_name=None):
         origins = [origin.strip() for origin in cors_origins.split(",")]
         CORS(app, resources={r"/api/*": {"origins": origins}})
 
-    # 🧩 Registro de Blueprints
-    app.register_blueprint(auth_bp, url_prefix="/api/auth")
-    app.register_blueprint(perspectives_bp, url_prefix="/api/perspectives")
-    app.register_blueprint(interpret_bp, url_prefix="/api/interpret")
+    # 🧩 Registro de Blueprints consolidados
+    app.register_blueprint(core_bp, url_prefix="/api")
     app.register_blueprint(astro_bp, url_prefix="/api/astro")
 
     @app.cli.command("create-all-tables")
