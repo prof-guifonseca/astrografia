@@ -3,51 +3,52 @@ import os
 import logging
 import openai
 
-# Configuração de logging
 logger = logging.getLogger(__name__)
 
-# 🔐 Chave da API: esperada como variável de ambiente
-api_key = os.getenv("OPENAI_API_KEY")
-if not api_key:
-    raise EnvironmentError("A variável de ambiente 'OPENAI_API_KEY' não está definida.")
-openai.api_key = api_key
+# 🔐 Configuração da API da OpenAI
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    raise EnvironmentError("❌ A variável de ambiente 'OPENAI_API_KEY' não está definida.")
+openai.api_key = OPENAI_API_KEY
 
 def interpretar_mapa(tema: str, planetas: list, nome: str, ascendente: dict) -> str:
     """
-    Gera uma interpretação astrológica personalizada usando o modelo GPT.
+    Gera uma interpretação astrológica personalizada usando GPT.
 
-    Parâmetros:
-        tema (str): Área de interesse (ex: "amor", "carreira", "família").
-        planetas (list): Lista de dicionários com informações planetárias.
-        nome (str): Nome da pessoa consultante.
-        ascendente (dict): {'sign': str, 'degree': float}
+    Args:
+        tema (str): Tema da consulta (ex: "amor", "carreira").
+        planetas (list): Lista de dicionários com dados dos planetas.
+        nome (str): Nome da pessoa.
+        ascendente (dict): Dicionário com 'sign' e 'degree' do ascendente.
 
-    Retorna:
-        str: Texto interpretativo gerado pelo modelo.
+    Returns:
+        str: Texto interpretativo gerado pelo modelo GPT.
     """
-    if not tema or not planetas or not nome or not ascendente:
-        raise ValueError("Todos os parâmetros são obrigatórios para a interpretação.")
+    if not (tema and planetas and nome and ascendente):
+        raise ValueError("⚠️ Todos os parâmetros são obrigatórios.")
 
     try:
-        lista_planetas = ', '.join(
-            f"{p['name']}: {p['sign']} {p['signDegree']}°" for p in planetas
+        planetas_formatados = ', '.join(
+            f"{p['name']}: {p['sign']} {p.get('sign_degree', p.get('signDegree', '?'))}°"
+            for p in planetas
         )
 
         prompt = f"""
-Você é um astrólogo profissional. Com base no seguinte mapa astral:
+Você é um astrólogo experiente. Com base no seguinte mapa natal:
 
-Nome: {nome}
-Ascendente: {ascendente['sign']} {ascendente['degree']}°
-Planetas: {lista_planetas}
+👤 Nome: {nome}
+🌀 Ascendente: {ascendente['sign']} {ascendente['degree']}°
+🪐 Planetas: {planetas_formatados}
 
-Gere uma interpretação personalizada para o tema: {tema.upper()}.
-Fale de forma acolhedora, sensível e com foco no autoconhecimento.
+➡️ Tema da interpretação: {tema.upper()}
+
+Gere uma análise acolhedora, sensível e voltada ao autoconhecimento. Utilize linguagem próxima, respeitosa e com toques poéticos quando pertinente. Evite termos excessivamente técnicos.
 """
 
         resposta = openai.ChatCompletion.create(
             model="gpt-4o",
-            messages=[{ "role": "user", "content": prompt }],
-            max_tokens=400,
+            messages=[{ "role": "user", "content": prompt.strip() }],
+            max_tokens=500,
             temperature=0.85
         )
 
@@ -55,5 +56,5 @@ Fale de forma acolhedora, sensível e com foco no autoconhecimento.
         return texto.strip()
 
     except Exception as e:
-        logger.error("Erro ao gerar interpretação com OpenAI GPT", exc_info=True)
+        logger.error("❌ Erro ao gerar interpretação com OpenAI GPT", exc_info=True)
         raise RuntimeError(f"Erro ao gerar interpretação astrológica: {e}")

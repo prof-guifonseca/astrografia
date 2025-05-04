@@ -2,7 +2,7 @@
 import logging
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.models.models import db, User, Perspective
+from app import db, User, Perspective  # ✅ Corrigido: import direto de app
 
 logger = logging.getLogger(__name__)
 interpret_bp = Blueprint("interpret_bp", __name__, url_prefix="/interpret")

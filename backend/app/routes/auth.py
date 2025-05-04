@@ -5,8 +5,7 @@ from flask_jwt_extended import (
     create_access_token, create_refresh_token,
     jwt_required, get_jwt_identity
 )
-from app import db, bcrypt
-from app.models.models import User
+from app import db, bcrypt, User  # ✅ Corrigido: import direto de app
 
 logger = logging.getLogger(__name__)
 auth_bp = Blueprint("auth_bp", __name__, url_prefix="/auth")

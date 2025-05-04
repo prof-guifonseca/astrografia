@@ -2,7 +2,7 @@
 import logging
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.models.models import db, User, Perspective
+from app import db, User, Perspective  # ✅ Corrigido: sem referência a models.models
 from app.routes.interpret import interpret_perspective_text
 
 logger = logging.getLogger(__name__)
@@ -13,7 +13,7 @@ perspectives_bp = Blueprint("perspectives_bp", __name__, url_prefix="/perspectiv
 def handle_perspectives():
     """
     Manipula Perspectivas:
-    - POST: Cria uma nova perspectiva e gera uma interpretação mock.
+    - POST: Cria nova perspectiva e gera resposta automática (mock).
     - GET: Retorna lista paginada de perspectivas do usuário autenticado.
     """
     try:
