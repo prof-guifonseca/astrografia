@@ -9,19 +9,23 @@ from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
-from app.core import register_routes  # Função que você deve criar para centralizar os endpoints
-
-# Carrega variáveis do .env apenas fora do ambiente de produção
-if os.environ.get("FLASK_ENV") != "production":
-    from dotenv import load_dotenv
-    dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
-    load_dotenv(dotenv_path=dotenv_path)
-
 # 🔧 Instâncias globais de extensões
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 migrate = Migrate()
 jwt = JWTManager()
+
+# 📦 Importações de rotas diretas
+from auth import auth_bp
+from perspectives import perspectives_bp
+from interpret import interpret_bp
+from astro_utils import astro_bp
+
+# 🔐 Variáveis do .env (em dev)
+if os.environ.get("FLASK_ENV") != "production":
+    from dotenv import load_dotenv
+    dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
+    load_dotenv(dotenv_path=dotenv_path)
 
 # ♻️ Configurações
 class Config:
@@ -118,8 +122,11 @@ def create_app(config_name=None):
         origins = [origin.strip() for origin in cors_origins.split(",")]
         CORS(app, resources={r"/api/*": {"origins": origins}})
 
-    # 📍 Centralize os endpoints aqui
-    register_routes(app)
+    # 🧩 Registro direto dos blueprints
+    app.register_blueprint(auth_bp, url_prefix="/api/auth")
+    app.register_blueprint(perspectives_bp, url_prefix="/api/perspectives")
+    app.register_blueprint(interpret_bp, url_prefix="/api/interpret")
+    app.register_blueprint(astro_bp, url_prefix="/api/astro")
 
     @app.cli.command("create-all-tables")
     def create_all_tables():
@@ -134,5 +141,5 @@ def create_app(config_name=None):
 
     return app
 
-# Inicializa o app
+# ⏯️ Inicializa o app
 app = create_app()
