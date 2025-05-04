@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-from datetime import timedelta, datetime, timezone
+from datetime import timedelta
 from flask import Flask
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
@@ -15,8 +15,8 @@ bcrypt = Bcrypt()
 migrate = Migrate()
 jwt = JWTManager()
 
-# 📦 Importações locais (ajustado conforme consolidação)
-from core import core_bp
+# 📦 Importações locais (sem circularidade)
+from core import register_routes
 from astro_untils import astro_bp
 
 # 🔐 Carrega variáveis do .env em desenvolvimento
@@ -37,7 +37,7 @@ class Config:
 class DevelopmentConfig(Config):
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "sqlite:///astrografia_dev.db")
-    CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+    CORS_ORIGINS = "http://localhost:3000,http://127.0.0.1:3000"
 
 class TestingConfig(Config):
     TESTING = True
@@ -73,15 +73,14 @@ def create_app(config_name=None):
     jwt.init_app(app)
     migrate.init_app(app, db)
 
-    cors_origins = app.config.get("CORS_ORIGINS", "*")
-    if cors_origins == "*":
+    origins = app.config.get("CORS_ORIGINS", "*")
+    if origins == "*":
         CORS(app)
     else:
-        origins = [origin.strip() for origin in cors_origins.split(",")]
-        CORS(app, resources={r"/api/*": {"origins": origins}})
+        CORS(app, resources={r"/api/*": {"origins": [o.strip() for o in origins.split(",")]}})
 
-    # 🧩 Registro de Blueprints consolidados
-    app.register_blueprint(core_bp, url_prefix="/api")
+    # 🧩 Registro dos blueprints
+    register_routes(app)
     app.register_blueprint(astro_bp, url_prefix="/api/astro")
 
     @app.cli.command("create-all-tables")

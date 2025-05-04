@@ -29,13 +29,12 @@ local_ephe = os.path.join(os.path.dirname(__file__), "ephe")
 
 if ephe_env and os.path.isdir(ephe_env):
     logger.info(f"Efemérides do ambiente: {ephe_env}")
+    os.environ["KERYKEION_EPHEMERIS_PATH"] = ephe_env
 elif os.path.isdir(local_ephe):
     os.environ["KERYKEION_EPHEMERIS_PATH"] = local_ephe
-    import kerykeion
-    kerykeion.KERYKEION_EPHEMERIS_PATH = local_ephe
     logger.info(f"Efemérides locais carregadas de {local_ephe}")
 else:
-    logger.warning("Efemérides não encontradas. Usando padrão do Kerykeion.")
+    logger.warning(f"Efemérides não encontradas. Tentado: {ephe_env} e {local_ephe}. Usando padrão do Kerykeion.")
 
 # 🌌 Constantes
 SIGNOS_MAP = {
@@ -85,7 +84,7 @@ def calcular_mapa_kerykeion(
             "abs_degree": round(asc.position, 4)
         }
 
-        casas = [  # Casas I a XII
+        casas = [
             {
                 "house": i,
                 "sign": casa.sign,
@@ -146,7 +145,7 @@ Gere uma análise acolhedora, sensível e voltada ao autoconhecimento. Utilize l
 
     except Exception as e:
         logger.error("Erro ao gerar interpretação com GPT", exc_info=True)
-        raise RuntimeError(f"Erro ao gerar interpretação astrológica: {e}")
+        return "⚠️ Não foi possível gerar a interpretação no momento. Tente novamente mais tarde."
 
 # 🌐 Endpoint GET /astro/positions
 @astro_bp.route("/positions", methods=["GET"])
@@ -154,20 +153,25 @@ def get_positions():
     start = time.time()
     params = {k: request.args.get(k) for k in ["date", "time", "lat", "lon", "tz"]}
     params["city"] = request.args.get("city", "N/A")
+    params["name"] = request.args.get("name", "AstrografiaUser")
 
-    missing = [k for k, v in params.items() if not v and k != "city"]
+    missing = [k for k, v in params.items() if not v and k not in ["city", "name"]]
     if missing:
         return jsonify({"error": f"Parâmetros ausentes: {', '.join(missing)}"}), 400
 
     try:
         birth_date = datetime.strptime(params["date"], "%Y-%m-%d")
         birth_time = datetime.strptime(params["time"], "%H:%M")
-        lat = float(params["lat"])
-        lon = float(params["lon"])
+        try:
+            lat = float(params["lat"])
+            lon = float(params["lon"])
+        except ValueError:
+            return jsonify({"error": "Latitude e longitude devem ser números válidos."}), 400
+
         pytz.timezone(params["tz"])  # valida timezone
 
         mapa = calcular_mapa_kerykeion(
-            "AstrografiaUser", birth_date.year, birth_date.month, birth_date.day,
+            params["name"], birth_date.year, birth_date.month, birth_date.day,
             birth_time.hour, birth_time.minute, lat, lon, params["tz"], params["city"]
         )
 
