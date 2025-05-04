@@ -3,13 +3,12 @@
   'use strict';
 
   const API = {
-    generate: 'https://astrografia.onrender.com/positions',
-    interpretar: 'https://astrografia.onrender.com/interpretar',
-    perspectiva: 'https://astrografia.onrender.com/perspectives'
+    generate: 'https://astrografia.onrender.com/api/astro/positions',
+    interpretar: 'https://astrografia.onrender.com/api/interpretar',
+    perspectiva: 'https://astrografia.onrender.com/api/perspectives'
   };
 
   const OPENCAGE_KEY = 'b639372a8f024a78b7ad0c15f4f5ea70';
-
   const $ = s => document.querySelector(s);
 
   const formEl = $('#astro-form');
@@ -30,7 +29,6 @@
 
   let dadosGerados = null;
 
-  // 🔁 Cache local (auto-exibição)
   const astroCache = localStorage.getItem('astroData');
   if (astroCache) {
     try {
@@ -48,7 +46,6 @@
     }
   }
 
-  // 📍 OpenCage para coordenadas
   async function obterCoordenadas(local) {
     const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(local)}&key=${OPENCAGE_KEY}&language=pt&limit=1`;
     try {
@@ -61,14 +58,18 @@
     }
   }
 
-  // 🚀 Consulta ao Flask /positions
   async function obterPosicoesPlanetarias(userData) {
+    const params = new URLSearchParams({
+      date: userData.birthDate,
+      time: userData.birthTime,
+      lat: userData.lat,
+      lon: userData.lon,
+      tz: userData.tz,
+      city: userData.birthPlace || 'N/A'
+    });
+
     try {
-      const res = await fetch(API.generate, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
-      });
+      const res = await fetch(`${API.generate}?${params.toString()}`);
       if (!res.ok) throw new Error('Erro na requisição');
       return await res.json();
     } catch (err) {
@@ -77,7 +78,6 @@
     }
   }
 
-  // 🌌 Exibição dos planetas e ascendente
   function exibirPlanetas(planets = [], ascendant = null) {
     chartEl.innerHTML = '<h3 class="fade-in">🔭 Posições Celestes</h3>';
 
@@ -101,7 +101,6 @@
     chartEl.appendChild(ul);
   }
 
-  // 🧾 Formulário principal
   formEl.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -150,7 +149,6 @@
     btn.textContent = 'Gerar Mapa Astral';
   });
 
-  // 📖 Relatórios Temáticos via /interpretar
   document.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-topic]');
     if (!btn || !dadosGerados) return;
@@ -200,7 +198,6 @@
     btn.disabled = true;
   });
 
-  // 🌱 Perspectiva Pessoal
   submitPerspectiveBtn?.addEventListener('click', async () => {
     const texto = perspectiveEl.value.trim();
     if (!texto) {
