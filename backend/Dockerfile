@@ -1,24 +1,24 @@
-# Usa uma imagem Python oficial enxuta
+# 📦 Imagem base enxuta com Python 3.11
 FROM python:3.11-slim
 
-# Define o diretório de trabalho dentro do contêiner
+# 📁 Define o diretório de trabalho dentro do contêiner
 WORKDIR /app
 
-# Copia o arquivo de dependências
+# 📜 Copia o arquivo de dependências
 COPY requirements.txt .
 
-# Instala as dependências
+# 🔧 Instala pip atualizado e as dependências do projeto
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copia todo o projeto para dentro do contêiner
+# 📦 Copia todo o conteúdo do projeto para dentro do contêiner
 COPY . .
 
-# Define o caminho correto para encontrar os módulos (opcional se setado no comando)
+# 🧭 Garante que o Python reconheça o diretório backend como raiz de módulos
 ENV PYTHONPATH=/app/backend
 
-# Expõe a porta da aplicação
+# 🚪 Expõe a porta que o Gunicorn usará
 EXPOSE 5000
 
-# Comando de inicialização (Gunicorn com a fábrica de app em backend.main:create_app)
-CMD ["gunicorn", "backend.main:create_app", "--bind", "0.0.0.0:5000"]
+# 🚀 Inicia o app usando Gunicorn, com diretório backend como raiz
+CMD ["gunicorn", "main:create_app", "--chdir", "backend", "--bind", "0.0.0.0:5000"]

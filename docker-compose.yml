@@ -1,0 +1,15 @@
+services:
+  backend:
+    build:
+      context: ./backend             # O contexto do build agora é a pasta do backend
+      dockerfile: Dockerfile         # O Dockerfile está dentro da própria pasta backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./backend/.env               # Carrega as variáveis de ambiente do backend
+    volumes:
+      - ./backend/ephe:/app/ephe     # Monta as efemérides dentro do contêiner
+    container_name: astrografia_backend
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app              # Agora /app é o backend no contêiner
