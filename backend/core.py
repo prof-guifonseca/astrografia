@@ -1,65 +1,16 @@
 # -*- coding: utf-8 -*-
-import os
 import logging
-from datetime import timedelta, datetime, timezone
-from flask import Flask, request, jsonify, Blueprint
-from flask_cors import CORS
+from datetime import datetime, timezone
+from flask import request, jsonify, Blueprint
 from flask_jwt_extended import (
-    JWTManager, jwt_required, get_jwt_identity,
+    jwt_required, get_jwt_identity,
     create_access_token, create_refresh_token
 )
-from flask_bcrypt import Bcrypt
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
 
-# 🔧 Extensões globais
-db = SQLAlchemy()
-bcrypt = Bcrypt()
-migrate = Migrate()
-jwt = JWTManager()
+# 🔧 Importa extensões globais já iniciadas em main.py
+from main import db, bcrypt
+
 logger = logging.getLogger(__name__)
-
-# 🔐 Variáveis do ambiente (.env)
-if os.environ.get("FLASK_ENV") != "production":
-    from dotenv import load_dotenv
-    dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
-    load_dotenv(dotenv_path=dotenv_path)
-
-# ♻️ Configurações
-class Config:
-    SECRET_KEY = os.environ.get("SECRET_KEY", "default-secret-key")
-    JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "default-jwt-secret-key")
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
-    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*")
-
-class DevelopmentConfig(Config):
-    DEBUG = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "sqlite:///astrografia_dev.db")
-    CORS_ORIGINS = "http://localhost:3000,http://127.0.0.1:3000"
-
-class TestingConfig(Config):
-    TESTING = True
-    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
-    WTF_CSRF_ENABLED = False
-
-class ProductionConfig(Config):
-    DEBUG = False
-    TESTING = False
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
-    if not SQLALCHEMY_DATABASE_URI:
-        raise RuntimeError("DATABASE_URL não definida para produção.")
-    if Config.SECRET_KEY == "default-secret-key":
-        raise RuntimeError("SECRET_KEY insegura para produção.")
-    CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "")
-
-config_by_name = {
-    "development": DevelopmentConfig,
-    "testing": TestingConfig,
-    "production": ProductionConfig,
-    "default": DevelopmentConfig,
-}
 
 # 👤 Modelos
 class User(db.Model):

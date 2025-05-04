@@ -68,11 +68,26 @@ def create_app(config_name=None):
     app = Flask(__name__)
     app.config.from_object(config_by_name[config_name])
 
+    # 🔭 Carrega efemérides antes de registrar blueprints
+    ephe_env = os.getenv("KEPHEMERIS_PATH")
+    local_ephe = os.path.join(os.path.dirname(__file__), "ephe")
+
+    if ephe_env and os.path.isdir(ephe_env):
+        os.environ["KERYKEION_EPHEMERIS_PATH"] = ephe_env
+        print(f"🔭 Efemérides carregadas de variável de ambiente: {ephe_env}")
+    elif os.path.isdir(local_ephe):
+        os.environ["KERYKEION_EPHEMERIS_PATH"] = local_ephe
+        print(f"🔭 Efemérides locais definidas: {local_ephe}")
+    else:
+        print(f"⚠️ Efemérides não encontradas em {ephe_env} nem em {local_ephe}")
+
+    # 🔧 Inicializa extensões
     db.init_app(app)
     bcrypt.init_app(app)
     jwt.init_app(app)
     migrate.init_app(app, db)
 
+    # 🌐 CORS
     origins = app.config.get("CORS_ORIGINS", "*")
     if origins == "*":
         CORS(app)
@@ -83,6 +98,7 @@ def create_app(config_name=None):
     register_routes(app)
     app.register_blueprint(astro_bp, url_prefix="/api/astro")
 
+    # ⚙️ Comando customizado para CLI
     @app.cli.command("create-all-tables")
     def create_all_tables():
         with app.app_context():
