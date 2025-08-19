@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#2C225C" />
+  <title>Astrografia 🌌 • Seu Mapa Astral Personalizado</title>
+
+  <meta name="description"
+    content="Descubra seu mapa astral completo com interpretações temáticas acolhedoras e precisas, baseadas na sua data, hora e local de nascimento." />
+
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css" />
+  <script src="script.js" defer></script>
+</head>
+
+<body>
+  <noscript>
+    <p style="text-align:center; color: red;">
+      ⚠️ Este site precisa de JavaScript para funcionar corretamente.
+    </p>
+  </noscript>
+
+  <header class="app-header">
+    <h1>Astrografia 🌌</h1>
+    <p class="subtitle">Descubra os caminhos que o céu escreve para você</p>
+  </header>
+
+  <main role="main">
+    <!-- Formulário -->
+    <section id="form-section" class="card" aria-labelledby="form-title">
+      <h2 id="form-title">Preencha seus dados astrais</h2>
+
+      <form id="astro-form" autocomplete="off">
+        <label for="name">Nome completo</label>
+        <input type="text" id="name" name="name" placeholder="Ex: Ana Oliveira" required />
+
+        <label for="birthDate">Data de nascimento</label>
+        <!-- Utilizamos campos de texto simples para facilitar a digitação no formato YYYY-MM-DD -->
+        <input type="text" id="birthDate" name="birthDate" placeholder="YYYY-MM-DD" required />
+
+        <label for="birthTime">Hora de nascimento</label>
+        <!-- Campo de texto para hora no formato HH:MM -->
+        <input type="text" id="birthTime" name="birthTime" placeholder="HH:MM" required />
+
+        <label for="birthPlace">Local de nascimento</label>
+        <input type="text" id="birthPlace" name="birthPlace" placeholder="Cidade, Estado" required />
+
+        <button id="generateMap" class="btn" type="submit">Gerar Mapa Astral</button>
+      </form>
+    </section>
+
+    <!-- Resultado do Mapa -->
+    <section id="result-section" class="card hidden" aria-labelledby="result-title">
+      <h2 id="result-title">Posições Planetárias</h2>
+      <p id="summary" aria-live="polite">Seu mapa será carregado aqui...</p>
+      <div id="chart-container"></div>
+      <div id="report-container" class="report-html"></div>
+    </section>
+
+    <!-- Relatórios Temáticos -->
+    <section id="section-buttons" class="section-buttons card hidden">
+      <h3>Explorar Relatórios Temáticos</h3>
+      <div class="btn-grid">
+        <button class="btn-section" data-topic="amor">❤️ Vida Amorosa</button>
+        <button class="btn-section" data-topic="carreira">💼 Vida Profissional</button>
+        <button class="btn-section" data-topic="familia">🏠 Família e Origens</button>
+        <button class="btn-section" data-topic="espiritualidade">🧘 Espiritualidade</button>
+        <button class="btn-section" data-topic="missao">🚀 Missão de Vida</button>
+        <button class="btn-section" data-topic="desafios">⚖️ Desafios Pessoais</button>
+      </div>
+    </section>
+
+    <!-- Perspectiva Pessoal -->
+    <section id="perspective-section" class="card hidden" aria-labelledby="perspective-title">
+      <h3 id="perspective-title">Envie sua Perspectiva Pessoal 🌱</h3>
+      <p>Escreva um pensamento, sensação ou dúvida atual. A astrologia pode iluminar esse momento à luz do seu mapa
+        natal.</p>
+
+      <textarea id="perspective-text" placeholder="O que você está sentindo hoje?" rows="5" required></textarea>
+      <button id="submit-perspective" class="btn" type="button">Interpretar Minha Perspectiva</button>
+
+      <div id="perspective-result" class="report-html"></div>
+    </section>
+  </main>
+</body>
+
+</html>
