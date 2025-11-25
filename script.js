@@ -152,28 +152,11 @@
 
   let dadosGerados = null;
 
-  // Recupera dados armazenados com TTL. Se expirado remove do cache.
-  (function restoreCache() {
-    const astroCache = localStorage.getItem('astroData');
-    if (!astroCache) return;
-    try {
-      const parsed = JSON.parse(astroCache);
-      if (parsed.expires && Date.now() > parsed.expires) {
-        localStorage.removeItem('astroData');
-        return;
-      }
-      if (parsed?.data?.planets?.length && parsed?.data?.ascendant) {
-        dadosGerados = parsed.data;
-        summaryEl.textContent = '⚡ Dados carregados do cache.';
-        resultSection.classList.remove('hidden');
-        exibirPlanetas(parsed.data.planets, parsed.data.ascendant);
-        sectionGroup?.classList.remove('hidden');
-        perspectiveSec?.classList.remove('hidden');
-      }
-    } catch (e) {
-      console.warn('[Astrografia] Falha ao ler cache:', e);
-    }
-  })();
+  // O aplicativo não utiliza mais cache local. A cada visita os dados
+  // astrológicos são calculados ou requisitados novamente. Isso garante
+  // que nenhuma informação pessoal fique armazenada no navegador do
+  // usuário. Portanto não há necessidade de restaurar dados de
+  // localStorage ou gerenciar expiração de cache.
 
   // Consulta a Netlify function para obter latitude e longitude a partir do local.
   async function obterCoordenadas(local) {
@@ -272,8 +255,6 @@
     const params = { date: birthDate, time: birthTime, lat: coords?.lat, lon: coords?.lng };
     const response = await obterPosicoesPlanetarias(params);
     dadosGerados = response;
-    // Salva no cache com expiração de 24h
-    localStorage.setItem('astroData', JSON.stringify({ data: response, expires: Date.now() + 24 * 60 * 60 * 1000 }));
     summaryEl.textContent = '✅ Mapa gerado com sucesso!';
     exibirPlanetas(response.planets, response.ascendant);
     sectionGroup?.classList.remove('hidden');
@@ -287,17 +268,9 @@
     if (!btn || !dadosGerados) return;
 
     const tema = btn.dataset.topic;
-    const cacheKey = `astroInterpretacao:${tema}`;
-
     sectionBtns.forEach(b => b.classList.remove('btn-section--active'));
     btn.classList.add('btn-section--active');
     reportEl.innerHTML = '';
-
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) {
-      reportEl.innerHTML = cached;
-      return;
-    }
 
     btn.textContent = 'Gerando...';
     btn.disabled = true;
@@ -375,7 +348,6 @@
 
     const interpretation = interpretTheme(tema, dadosGerados);
     reportEl.innerHTML = interpretation;
-    localStorage.setItem(cacheKey, interpretation);
 
     btn.textContent = '✔️ Interpretado';
     btn.disabled = true;
