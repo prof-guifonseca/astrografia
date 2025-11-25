@@ -60,6 +60,7 @@ async function handler(event) {
     headers: { 'Content-Type': 'application/json' }
   };
 }
+module.exports = { handler };
 
 /*
  * Simplified astronomical calculator used when the remote API is
