@@ -12,6 +12,7 @@
  */
 
 async function handler(event) {
+  // Only allow POST requests; return 405 for others
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
@@ -19,6 +20,8 @@ async function handler(event) {
       headers: { Allow: 'POST' }
     };
   }
+
+  // Parse JSON body safely
   let body;
   try {
     body = JSON.parse(event.body || '{}');
@@ -28,31 +31,157 @@ async function handler(event) {
       body: JSON.stringify({ error: 'Invalid JSON body' })
     };
   }
-  const { date, time, lat, lon } = body;
-  // Attempt to call external API if configured
-  const remoteUrl = process.env.ASTRO_API_URL;
-  if (remoteUrl) {
+
+  const { date, time, lat, lon } = body || {};
+
+  // API key for FreeAstrologyAPI (from environment)
+  const apiKey = process.env.ASTRO_API_KEY;
+  // Allow overriding the base URL via env; default to FreeAstrologyAPI's endpoint
+  const baseUrl = process.env.ASTRO_API_URL || 'https://json.freeastrologyapi.com/western/planets';
+
+  /**
+   * Convert an English zodiac name to its Portuguese equivalent.  The
+   * FreeAstrologyAPI may return zodiac sign names in English even when
+   * language=pt is specified, so we translate them explicitly here.
+   */
+  const signMap = {
+    Aries: 'Áries',
+    Taurus: 'Touro',
+    Gemini: 'Gêmeos',
+    Cancer: 'Câncer',
+    Leo: 'Leão',
+    Virgo: 'Virgem',
+    Libra: 'Libra',
+    Scorpio: 'Escorpião',
+    Sagittarius: 'Sagitário',
+    Capricorn: 'Capricórnio',
+    Aquarius: 'Aquário',
+    Pisces: 'Peixes'
+  };
+
+  /**
+   * Mapping of planet names to emojis used in the UI.  Only the major
+   * planets plus luminaries are included; additional bodies returned by
+   * the API (e.g. Ceres, Chiron) are ignored for simplicity.
+   */
+  const planetIcons = {
+    Sun: '☀️',
+    Moon: '🌙',
+    Mercury: '☿️',
+    Venus: '♀️',
+    Mars: '♂️',
+    Jupiter: '♃',
+    Saturn: '♄',
+    Uranus: '♅',
+    Neptune: '♆',
+    Pluto: '♇'
+  };
+
+  /**
+   * Computes an approximate time zone offset in hours from a longitude.
+   * Many time zone boundaries are irregular and often offset by half or
+   * quarter hours, but as a reasonable estimate we divide longitude by
+   * 15° (one hour per 15° of longitude) and round to the nearest 0.25.
+   *
+   * @param {number} longitude
+   * @returns {number} time zone offset in hours
+   */
+  function approximateTimezone(longitude) {
+    if (typeof longitude !== 'number' || isNaN(longitude)) return 0;
+    const hours = longitude / 15;
+    return Math.round(hours * 4) / 4;
+  }
+
+  // Attempt to call the FreeAstrologyAPI if an API key is configured
+  if (apiKey) {
     try {
-      const response = await fetch(remoteUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date, time, lat, lon })
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data?.planets && data?.ascendant) {
-          return {
-            statusCode: 200,
-            body: JSON.stringify(data),
-            headers: { 'Content-Type': 'application/json' }
-          };
+      // Ensure we have a date and time to work with
+      if (typeof date === 'string' && typeof time === 'string' && date.includes('-') && time.includes(':')) {
+        const [yearStr, monthStr, dayStr] = date.split('-');
+        const [hourStr, minuteStr] = time.split(':');
+        const year = parseInt(yearStr, 10);
+        const month = parseInt(monthStr, 10);
+        const dayNum = parseInt(dayStr, 10);
+        const hoursNum = parseInt(hourStr, 10);
+        const minutesNum = parseInt(minuteStr, 10);
+        const secondsNum = 0;
+        // Use provided lat/lon if valid numbers; else leave undefined to allow API default
+        const latitude = typeof lat === 'number' ? lat : undefined;
+        const longitude = typeof lon === 'number' ? lon : undefined;
+        // Determine timezone: use timezone passed from client if provided; else approximate
+        let timezone = 0;
+        if (typeof body.timezone === 'number') {
+          timezone = body.timezone;
+        } else if (typeof longitude === 'number') {
+          timezone = approximateTimezone(longitude);
+        }
+        const payload = {
+          year,
+          month,
+          date: dayNum,
+          hours: hoursNum,
+          minutes: minutesNum,
+          seconds: secondsNum,
+          latitude,
+          longitude,
+          timezone,
+          config: {
+            observation_point: 'topocentric',
+            ayanamsha: 'tropical',
+            language: 'pt'
+          }
+        };
+        const response = await fetch(baseUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey
+          },
+          body: JSON.stringify(payload)
+        });
+        if (response.ok) {
+          const apiData = await response.json();
+          const output = apiData?.output;
+          if (Array.isArray(output)) {
+            const planets = [];
+            let ascendant = null;
+            output.forEach(item => {
+              const nameEn = item?.planet?.en;
+              const fullDeg = typeof item?.fullDegree === 'number' ? item.fullDegree : null;
+              const normDeg = typeof item?.normDegree === 'number' ? item.normDegree : null;
+              const signEn = item?.zodiac_sign?.name?.en;
+              const signPt = signEn && signMap[signEn] ? signMap[signEn] : signEn;
+              if (nameEn === 'Ascendant') {
+                ascendant = {
+                  sign: signPt,
+                  degree: normDeg
+                };
+              } else if (planetIcons[nameEn]) {
+                planets.push({
+                  name: nameEn,
+                  sign: signPt,
+                  signDegree: normDeg,
+                  degree: fullDeg,
+                  icon: planetIcons[nameEn]
+                });
+              }
+            });
+            if (planets.length > 0 && ascendant) {
+              return {
+                statusCode: 200,
+                body: JSON.stringify({ planets, ascendant }),
+                headers: { 'Content-Type': 'application/json' }
+              };
+            }
+          }
         }
       }
     } catch (err) {
-      // ignore error and fall back
+      console.error('[getAstroData] External API error:', err);
     }
   }
-  // Fallback: compute approximate positions locally
+
+  // Fallback: compute approximate positions locally using simplified algorithm
   const fallback = computeAstroData(date, time);
   return {
     statusCode: 200,
@@ -60,6 +189,7 @@ async function handler(event) {
     headers: { 'Content-Type': 'application/json' }
   };
 }
+
 module.exports = { handler };
 
 /*
