@@ -34,14 +34,31 @@ async function handler(event) {
       const url = new URL('https://api.opencagedata.com/geocode/v1/json');
       url.searchParams.set('q', q);
       url.searchParams.set('key', apiKey);
+      // Request Portuguese language for consistency with the UI
       url.searchParams.set('language', 'pt');
       url.searchParams.set('limit', '1');
       const res = await fetch(url.toString());
       if (!res.ok) return null;
       const data = await res.json();
-      const geom = data?.results?.[0]?.geometry;
+      const result = data?.results?.[0];
+      const geom = result?.geometry;
       if (geom && typeof geom.lat === 'number' && typeof geom.lng === 'number') {
-        return { lat: geom.lat, lng: geom.lng };
+        let tzOffset = null;
+        let tzName = null;
+        // Attempt to extract timezone information if available
+        const tz = result?.annotations?.timezone;
+        if (tz) {
+          if (typeof tz.offset_sec === 'number') {
+            tzOffset = tz.offset_sec / 3600;
+          }
+          if (typeof tz.name === 'string') {
+            tzName = tz.name;
+          }
+        }
+        const coord = { lat: geom.lat, lng: geom.lng };
+        if (typeof tzOffset === 'number') coord.timezone = tzOffset;
+        if (tzName) coord.tzName = tzName;
+        return coord;
       }
     } catch (_) {
       // ignore and fall back
@@ -74,7 +91,15 @@ async function handler(event) {
         const lat = parseFloat(first.lat);
         const lng = parseFloat(first.lon);
         if (!isNaN(lat) && !isNaN(lng)) {
-          return { lat, lng };
+          // Approximate timezone by longitude when using Nominatim (no timezone info)
+          let tzOffset = null;
+          if (!isNaN(lng)) {
+            // one hour per 15° of longitude, round to nearest quarter hour
+            tzOffset = Math.round((lng / 15) * 4) / 4;
+          }
+          const coord = { lat, lng };
+          if (tzOffset !== null) coord.timezone = tzOffset;
+          return coord;
         }
       }
     } catch (_) {
