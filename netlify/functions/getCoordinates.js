@@ -1,132 +1,181 @@
 /*
  * Netlify Function: getCoordinates
  *
- * This serverless function proxies requests to the OpenCage geocoding API.
- * The API key is read from the environment variable `OPENCAGE_KEY` so it
- * doesn’t live in the client. When provided a `place` query parameter it
- * returns the latitude and longitude of the first match or null if
- * unavailable. If the upstream API call fails the function will respond
- * with an error status code and a descriptive message.
+ * Esta função serverless faz proxy para o serviço de geocodificação:
+ * 1) Tenta o OpenCage se a chave OPENCAGE_KEY estiver configurada.
+ * 2) Se não houver chave ou não houver resultado, cai no Nominatim (OpenStreetMap).
+ *
+ * Entrada:
+ *   - Método: GET
+ *   - Query param obrigatório: `place` (string)
+ *
+ * Saída (200):
+ *   {
+ *     lat: number,
+ *     lng: number,
+ *     timezone?: number,  // offset em horas, se disponível (pode vir do OpenCage ou aproximado)
+ *     tzName?: string     // nome da timezone (apenas OpenCage)
+ *   }
  */
 
 async function handler(event) {
-  const place = event.queryStringParameters?.place;
-  if (!place) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Missing required query parameter `place`.' })
-    };
-  }
-
-  /**
-   * Tenta obter coordenadas via OpenCage se a chave estiver configurada.  Se a
-   * consulta falhar ou não retornar resultados, cai no fallback usando o
-   * serviço Nominatim do OpenStreetMap.  Dessa forma aumentamos a
-   * confiabilidade da geolocalização sem depender de um único provedor.
-   *
-   * @param {string} q Localização a geocodificar
-   * @returns {Promise<{lat:number,lng:number}|null>}
-   */
-  async function geocodeOpenCage(q) {
-    const apiKey = process.env.OPENCAGE_KEY;
-    if (!apiKey) return null;
-    try {
-      const url = new URL('https://api.opencagedata.com/geocode/v1/json');
-      url.searchParams.set('q', q);
-      url.searchParams.set('key', apiKey);
-      // Request Portuguese language for consistency with the UI
-      url.searchParams.set('language', 'pt');
-      url.searchParams.set('limit', '1');
-      const res = await fetch(url.toString());
-      if (!res.ok) return null;
-      const data = await res.json();
-      const result = data?.results?.[0];
-      const geom = result?.geometry;
-      if (geom && typeof geom.lat === 'number' && typeof geom.lng === 'number') {
-        let tzOffset = null;
-        let tzName = null;
-        // Attempt to extract timezone information if available
-        const tz = result?.annotations?.timezone;
-        if (tz) {
-          if (typeof tz.offset_sec === 'number') {
-            tzOffset = tz.offset_sec / 3600;
-          }
-          if (typeof tz.name === 'string') {
-            tzName = tz.name;
-          }
-        }
-        const coord = { lat: geom.lat, lng: geom.lng };
-        if (typeof tzOffset === 'number') coord.timezone = tzOffset;
-        if (tzName) coord.tzName = tzName;
-        return coord;
-      }
-    } catch (_) {
-      // ignore and fall back
+  try {
+    // Opcional: restringir método a GET
+    if (event.httpMethod && event.httpMethod !== 'GET') {
+      return {
+        statusCode: 405,
+        headers: { 'Content-Type': 'application/json', Allow: 'GET' },
+        body: JSON.stringify({ error: 'Method Not Allowed' })
+      };
     }
-    return null;
-  }
 
-  /**
-   * Fallback geocoding using Nominatim.  This API é pública e não requer chave.
-   * Requer que o User-Agent seja informado para conformidade com os termos de uso.
-   * Retorna a primeira coordenada encontrada ou null.
-   *
-   * @param {string} q Localização a geocodificar
-   * @returns {Promise<{lat:number,lng:number}|null>}
-   */
-  async function geocodeNominatim(q) {
-    try {
-      const url = new URL('https://nominatim.openstreetmap.org/search');
-      url.searchParams.set('q', q);
-      url.searchParams.set('format', 'json');
-      url.searchParams.set('limit', '1');
-      // Utilizamos fetch com cabeçalho User-Agent para cumprir as políticas de Nominatim
-      const res = await fetch(url.toString(), {
-        headers: { 'User-Agent': 'astrografia-netlify-function/1.0' }
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      const first = data?.[0];
-      if (first && first.lat && first.lon) {
+    const rawPlace = event.queryStringParameters?.place;
+    const place = typeof rawPlace === 'string' ? rawPlace.trim() : '';
+
+    if (!place) {
+      return {
+        statusCode: 400,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Missing required query parameter `place`.' })
+      };
+    }
+
+    /**
+     * Tenta obter coordenadas via OpenCage se a chave estiver configurada.
+     * Se falhar ou não retornar resultados, retorna null.
+     *
+     * @param {string} q Localização a geocodificar
+     * @returns {Promise<{lat:number,lng:number,timezone?:number,tzName?:string}|null>}
+     */
+    async function geocodeOpenCage(q) {
+      const apiKey = process.env.OPENCAGE_KEY;
+      if (!apiKey) return null;
+
+      try {
+        const url = new URL('https://api.opencagedata.com/geocode/v1/json');
+        url.searchParams.set('q', q);
+        url.searchParams.set('key', apiKey);
+        url.searchParams.set('language', 'pt'); // consistência com UI
+        url.searchParams.set('limit', '1');
+        // Garantir que timezone venha nas anotações
+        url.searchParams.set('no_annotations', '0');
+
+        const res = await fetch(url.toString());
+        if (!res.ok) {
+          console.error('[getCoordinates] OpenCage HTTP error:', res.status);
+          return null;
+        }
+
+        const data = await res.json();
+        const result = data?.results?.[0];
+        const geom = result?.geometry;
+
+        if (!geom || typeof geom.lat !== 'number' || typeof geom.lng !== 'number') {
+          return null;
+        }
+
+        const coord = {
+          lat: geom.lat,
+          lng: geom.lng
+        };
+
+        // Timezone vinda do próprio OpenCage (mais confiável que chute por longitude)
+        const tz = result?.annotations?.timezone;
+        if (tz && typeof tz.offset_sec === 'number') {
+          coord.timezone = tz.offset_sec / 3600;
+        }
+        if (tz && typeof tz.name === 'string') {
+          coord.tzName = tz.name;
+        }
+
+        return coord;
+      } catch (err) {
+        console.error('[getCoordinates] OpenCage error:', err);
+        return null;
+      }
+    }
+
+    /**
+     * Fallback usando Nominatim (OpenStreetMap).
+     * API pública, sem chave. Exige User-Agent.
+     *
+     * @param {string} q Localização a geocodificar
+     * @returns {Promise<{lat:number,lng:number,timezone?:number}|null>}
+     */
+    async function geocodeNominatim(q) {
+      try {
+        const url = new URL('https://nominatim.openstreetmap.org/search');
+        url.searchParams.set('q', q);
+        url.searchParams.set('format', 'json');
+        url.searchParams.set('limit', '1');
+
+        const res = await fetch(url.toString(), {
+          headers: {
+            'User-Agent': 'astrografia-netlify-function/1.0',
+            'Accept-Language': 'pt'
+          }
+        });
+
+        if (!res.ok) {
+          console.error('[getCoordinates] Nominatim HTTP error:', res.status);
+          return null;
+        }
+
+        const data = await res.json();
+        const first = data?.[0];
+        if (!first || !first.lat || !first.lon) {
+          return null;
+        }
+
         const lat = parseFloat(first.lat);
         const lng = parseFloat(first.lon);
-        if (!isNaN(lat) && !isNaN(lng)) {
-          // Approximate timezone by longitude when using Nominatim (no timezone info)
-          let tzOffset = null;
-          if (!isNaN(lng)) {
-            // one hour per 15° of longitude, round to nearest quarter hour
-            tzOffset = Math.round((lng / 15) * 4) / 4;
-          }
-          const coord = { lat, lng };
-          if (tzOffset !== null) coord.timezone = tzOffset;
-          return coord;
+        if (Number.isNaN(lat) || Number.isNaN(lng)) {
+          return null;
         }
-      }
-    } catch (_) {
-      // ignore
-    }
-    return null;
-  }
 
-  let geometry = null;
-  // First attempt: OpenCage
-  geometry = await geocodeOpenCage(place);
-  // Fallback: Nominatim
-  if (!geometry) {
-    geometry = await geocodeNominatim(place);
-  }
-  if (geometry) {
+        const coord = { lat, lng };
+
+        // Opcional: offset aproximado pela longitude.
+        // Como a tua função de mapa astral já usa -3 de padrão,
+        // você pode escolher usar ou não esse campo no front.
+        const tzOffset = Math.round((lng / 15) * 4) / 4;
+        if (Number.isFinite(tzOffset)) {
+          coord.timezone = tzOffset;
+        }
+
+        return coord;
+      } catch (err) {
+        console.error('[getCoordinates] Nominatim error:', err);
+        return null;
+      }
+    }
+
+    // Tenta primeiro OpenCage; se falhar, cai no Nominatim
+    const geometry =
+      (await geocodeOpenCage(place)) || (await geocodeNominatim(place));
+
+    if (geometry) {
+      return {
+        statusCode: 200,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(geometry)
+      };
+    }
+
+    // Nenhum provedor retornou resultado
     return {
-      statusCode: 200,
-      body: JSON.stringify(geometry),
-      headers: { 'Content-Type': 'application/json' }
+      statusCode: 404,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'Unable to geocode location.' })
+    };
+  } catch (err) {
+    console.error('[getCoordinates] Unexpected error:', err);
+    return {
+      statusCode: 500,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'Internal server error.' })
     };
   }
-  // If no result at all
-  return {
-    statusCode: 404,
-    body: JSON.stringify({ error: 'Unable to geocode location.' })
-  };
 }
 
 module.exports = { handler };
