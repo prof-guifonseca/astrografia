@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#2C225C" />
+  <title>Astrografia • Mapa Astral Personalizado</title>
+
+  <meta name="description"
+    content="Descubra seu mapa astral completo com interpretações temáticas acolhedoras e precisas, baseadas na sua data, hora e local de nascimento." />
+
+  <!-- Logotipo e identidade visual -->
+  <link rel="icon" href="assets/logo.png" type="image/png">
+  <!-- Tipografias personalizadas: Playfair para títulos e Inter para o corpo -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+  <script src="script.js" defer></script>
+</head>
+
+<body>
+  <noscript>
+    <p style="text-align:center; color: red;">
+      ⚠️ Este site precisa de JavaScript para funcionar corretamente.
+    </p>
+  </noscript>
+
+  <header class="app-header">
+    <img src="assets/logo.png" alt="Logotipo Astrografia" class="logo" width="64" height="64" />
+    <h1>Astrografia</h1>
+    <p class="subtitle">Descubra os caminhos que o céu escreve para você</p>
+  </header>
+
+  <main role="main" class="grid-layout">
+    <!-- Coluna esquerda: Formulário -->
+    <div class="left-column">
+      <section id="form-section" class="card" aria-labelledby="form-title">
+        <h2 id="form-title">Preencha seus dados astrais</h2>
+        <form id="astro-form" autocomplete="off">
+          <label for="name">Nome completo</label>
+          <input type="text" id="name" name="name" placeholder="Ex: Ana Oliveira" required />
+          <label for="birthDate">Data de nascimento</label>
+          <input type="date" id="birthDate" name="birthDate" required />
+          <label for="birthTime">Hora de nascimento</label>
+          <input type="time" id="birthTime" name="birthTime" required />
+          <label for="birthPlace">Local de nascimento</label>
+          <input type="text" id="birthPlace" name="birthPlace" placeholder="Cidade, Estado ou País" required />
+          <button id="generateMap" class="btn" type="submit">Gerar Mapa Astral</button>
+        </form>
+      </section>
+    </div>
+    <!-- Coluna direita: Resultados e Relatórios -->
+    <div class="right-column">
+      <section id="result-section" class="card hidden" aria-labelledby="result-title">
+        <h2 id="result-title">Posições Planetárias</h2>
+        <p id="summary" aria-live="polite">Seu mapa será carregado aqui...</p>
+        <div id="chart-container"></div>
+        <div id="report-container" class="report-html"></div>
+      </section>
+      <section id="section-buttons" class="section-buttons card hidden">
+        <h3>Explorar Relatórios Temáticos</h3>
+        <div class="btn-grid">
+          <button class="btn-section" data-topic="amor">❤️ Vida Amorosa</button>
+          <button class="btn-section" data-topic="carreira">💼 Vida Profissional</button>
+          <button class="btn-section" data-topic="familia">🏠 Família e Origens</button>
+          <button class="btn-section" data-topic="espiritualidade">🧘 Espiritualidade</button>
+          <button class="btn-section" data-topic="missao">🚀 Missão de Vida</button>
+          <button class="btn-section" data-topic="desafios">⚖️ Desafios Pessoais</button>
+        </div>
+      </section>
+      <section id="perspective-section" class="card hidden" aria-labelledby="perspective-title">
+        <h3 id="perspective-title">Envie sua Perspectiva Pessoal 🌱</h3>
+        <p>Escreva um pensamento, sensação ou dúvida atual. A astrologia pode iluminar esse momento à luz do seu mapa natal.</p>
+        <textarea id="perspective-text" placeholder="O que você está sentindo hoje?" rows="5" required></textarea>
+        <button id="submit-perspective" class="btn" type="button">Interpretar Minha Perspectiva</button>
+        <div id="perspective-result" class="report-html"></div>
+      </section>
+    </div>
+  </main>
+  <!-- Toast container for feedback messages -->
+  <div id="toast-container" aria-live="polite"></div>
+</body>
+
+</html>
