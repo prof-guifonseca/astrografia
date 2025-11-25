@@ -55,6 +55,14 @@ Resumo astrológico disponível:
 ${astroSummary}
 `.trim();
 
+    // Prepare the request for the OpenAI Chat Completions API.  We use
+    // `max_tokens` instead of the unsupported `max_completion_tokens` and
+    // omit any experimental parameters like `reasoning_effort` to improve
+    // compatibility.  The model can be overridden via the environment
+    // variable `OPENAI_MODEL`; if not defined we fall back to a sensible
+    // default (gpt-4o).  Temperature is kept at 0.8 to encourage a
+    // slightly creative but still coherent response.
+    const openAiModel = process.env.OPENAI_MODEL || "gpt-4o";
     const response = await fetch(OPENAI_API_URL, {
       method: "POST",
       headers: {
@@ -62,11 +70,9 @@ ${astroSummary}
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-5.1-chat-latest",
-        // aqui você controla o tamanho da resposta
-        max_completion_tokens: 1000, 
+        model: openAiModel,
+        max_tokens: 1000,
         temperature: 0.8,
-        reasoning_effort: "high",
         messages: [
           {
             role: "system",
