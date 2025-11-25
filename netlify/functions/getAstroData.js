@@ -5,8 +5,8 @@
  * POST JSON: {
  *   date: "YYYY-MM-DD",
  *   time: "HH:MM",
- *   lat?: number,
- *   lon?: number,
+ *   lat?: number | string,
+ *   lon?: number | string,
  *   timezone?: number   // ex.: -3, -2, -5 (já incluindo +1h de verão, se aplicável)
  * }
  *
@@ -158,255 +158,274 @@ async function handler(event) {
         const minutesNum = parseInt(minuteStr, 10);
         const secondsNum = 0;
 
-        const latitude = typeof lat === 'number' ? lat : undefined;
-        const longitude = typeof lon === 'number' ? lon : undefined;
+        const latitude = toNumber(lat);
+        const longitude = toNumber(lon);
 
-        // Fuso padrão: Brasília (-3). Front pode sobrescrever (incluindo +1h de verão).
-        let timezone = -3;
-        if (tzInput !== undefined) {
-          const tzNum = Number(tzInput);
-          if (!Number.isNaN(tzNum) && Number.isFinite(tzNum)) {
-            timezone = tzNum;
-          }
-        }
-
-        const basePayload = {
-          year,
-          month,
-          date: dayNum,
-          hours: hoursNum,
-          minutes: minutesNum,
-          seconds: secondsNum,
-          latitude,
-          longitude,
-          timezone
-        };
-
-        const commonConfig = {
-          observation_point: 'topocentric',
-          ayanamsha: 'tropical'
-        };
-
-        const planetsPayload = {
-          ...basePayload,
-          config: commonConfig,
-          language: 'pt'
-        };
-
-        const housesPayload = {
-          ...basePayload,
-          config: commonConfig,
-          house_system: 'Placidus',
-          language: 'pt'
-        };
-
-        const [planetsRes, housesRes] = await Promise.all([
-          fetch(baseUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-api-key': apiKey
-            },
-            body: JSON.stringify(planetsPayload)
-          }),
-          fetch(HOUSES_URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-api-key': apiKey
-            },
-            body: JSON.stringify(housesPayload)
-          })
-        ]);
-
-        // ---------- Planetas + ângulos ----------
-        if (!planetsRes.ok) {
-          fallbackReason = `API planets respondeu ${planetsRes.status}`;
+        if (latitude == null || longitude == null) {
+          fallbackReason = 'Latitude/longitude inválidas ou ausentes';
         } else {
-          const apiData = await planetsRes.json();
-          const output = apiData?.output;
+          // Fuso padrão: Brasília (-3). Front pode sobrescrever (incluindo +1h de verão).
+          let timezone = -3;
+          if (tzInput !== undefined) {
+            const tzNum = Number(tzInput);
+            if (!Number.isNaN(tzNum) && Number.isFinite(tzNum)) {
+              timezone = tzNum;
+            }
+          }
 
-          if (Array.isArray(output)) {
-            const rawAngles = {};
+          const basePayload = {
+            year,
+            month,
+            date: dayNum,
+            hours: hoursNum,
+            minutes: minutesNum,
+            seconds: secondsNum,
+            latitude,
+            longitude,
+            timezone
+          };
 
-            output.forEach(item => {
-              const nameEn = item?.planet?.en;
-              const fullDeg =
-                typeof item?.fullDegree === 'number' ? item.fullDegree : null;
-              const normDeg =
-                typeof item?.normDegree === 'number' ? item.normDegree : null;
-              const signEn = item?.zodiac_sign?.name?.en;
-              const signPt =
-                signEn && signMap[signEn] ? signMap[signEn] : signEn;
+          const commonConfig = {
+            observation_point: 'topocentric',
+            ayanamsha: 'tropical',
+            language: 'pt'
+          };
 
-              if (nameEn === 'Ascendant') {
-                ascendant = {
-                  sign: signPt,
-                  degree: normDeg
-                };
-                rawAngles.ascendant = {
-                  name: angleNamePtMap[nameEn],
-                  sign: signPt,
-                  degree: normDeg,
-                  iconKey: angleIconKeyMap[nameEn],
-                  icon: angleEmojiMap[nameEn]
-                };
-              } else if (angleNamePtMap[nameEn]) {
-                const key =
-                  nameEn === 'MC'
-                    ? 'midheaven'
-                    : nameEn === 'IC'
-                    ? 'ic'
-                    : nameEn === 'Descendant'
-                    ? 'descendant'
-                    : nameEn;
+          const planetsPayload = {
+            ...basePayload,
+            config: commonConfig
+          };
 
-                rawAngles[key] = {
-                  name: angleNamePtMap[nameEn],
-                  sign: signPt,
-                  degree: normDeg,
-                  iconKey: angleIconKeyMap[nameEn],
-                  icon: angleEmojiMap[nameEn]
-                };
-              } else if (planetIconKeyMap[nameEn]) {
-                planets.push({
-                  name:
-                    nameEn && planetNamePtMap[nameEn]
-                      ? planetNamePtMap[nameEn]
-                      : nameEn,
-                  sign: signPt,
-                  signDegree: normDeg,
-                  degree: fullDeg,
-                  icon: planetEmojiMap[nameEn],
-                  iconKey: planetIconKeyMap[nameEn]
-                });
-              }
-            });
+          const housesPayload = {
+            ...basePayload,
+            config: {
+              ...commonConfig,
+              house_system: 'Placidus'
+            }
+          };
 
-            angles = {
-              ascendant:
-                rawAngles.ascendant ||
-                (ascendant
-                  ? {
-                      name: 'Ascendente',
-                      sign: ascendant.sign,
-                      degree: ascendant.degree,
-                      iconKey: 'ascendant',
-                      icon: angleEmojiMap.Ascendant
-                    }
-                  : null),
-              midheaven: rawAngles.midheaven || null,
-              descendant: rawAngles.descendant || null,
-              ic: rawAngles.ic || null
-            };
+          const [planetsRes, housesRes] = await Promise.all([
+            fetch(baseUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': apiKey
+              },
+              body: JSON.stringify(planetsPayload)
+            }),
+            fetch(HOUSES_URL, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': apiKey
+              },
+              body: JSON.stringify(housesPayload)
+            })
+          ]);
+
+          // ---------- Planetas + ângulos ----------
+          if (!planetsRes.ok) {
+            fallbackReason = `API planets respondeu ${planetsRes.status}`;
           } else {
-            fallbackReason = 'Resposta inesperada da API de planetas';
-          }
-        }
+            const apiData = await planetsRes.json();
+            const output = apiData?.output;
 
-        // ---------- Casas ----------
-        if (!housesRes.ok) {
-          const reason = `API houses respondeu ${housesRes.status}`;
-          fallbackReason = fallbackReason
-            ? `${fallbackReason}; ${reason}`
-            : reason;
-        } else {
-          const housesJson = await housesRes.json();
-          const hOut = housesJson?.output;
+            if (Array.isArray(output)) {
+              const rawAngles = {};
 
-          if (Array.isArray(hOut)) {
-            houses = hOut
-              .map(item => {
+              output.forEach(item => {
+                const nameEn = item?.planet?.en;
+                const fullDeg =
+                  typeof item?.fullDegree === 'number'
+                    ? item.fullDegree
+                    : typeof item?.degree === 'number'
+                    ? item.degree
+                    : null;
+                const normDeg =
+                  typeof item?.normDegree === 'number'
+                    ? item.normDegree
+                    : null;
                 const signEn = item?.zodiac_sign?.name?.en;
                 const signPt =
                   signEn && signMap[signEn] ? signMap[signEn] : signEn;
-                return {
-                  house: item?.house,
-                  sign: signPt,
-                  degree:
-                    typeof item?.normDegree === 'number'
-                      ? item.normDegree
-                      : null,
-                  fullDegree:
-                    typeof item?.fullDegree === 'number'
-                      ? item.fullDegree
-                      : null
-                };
-              })
-              .filter(h => h.house != null)
-              .sort((a, b) => a.house - b.house);
-          } else {
-            const reason = 'Resposta inesperada da API de casas';
+
+                if (nameEn === 'Ascendant') {
+                  ascendant = {
+                    sign: signPt,
+                    degree: normDeg
+                  };
+                  rawAngles.ascendant = {
+                    name: angleNamePtMap[nameEn],
+                    sign: signPt,
+                    degree: normDeg,
+                    iconKey: angleIconKeyMap[nameEn],
+                    icon: angleEmojiMap[nameEn]
+                  };
+                } else if (angleNamePtMap[nameEn]) {
+                  const key =
+                    nameEn === 'MC'
+                      ? 'midheaven'
+                      : nameEn === 'IC'
+                      ? 'ic'
+                      : nameEn === 'Descendant'
+                      ? 'descendant'
+                      : nameEn;
+
+                  rawAngles[key] = {
+                    name: angleNamePtMap[nameEn],
+                    sign: signPt,
+                    degree: normDeg,
+                    iconKey: angleIconKeyMap[nameEn],
+                    icon: angleEmojiMap[nameEn]
+                  };
+                } else if (planetIconKeyMap[nameEn]) {
+                  planets.push({
+                    name:
+                      nameEn && planetNamePtMap[nameEn]
+                        ? planetNamePtMap[nameEn]
+                        : nameEn,
+                    sign: signPt,
+                    signDegree: normDeg,
+                    degree: fullDeg,
+                    icon: planetEmojiMap[nameEn],
+                    iconKey: planetIconKeyMap[nameEn]
+                  });
+                }
+              });
+
+              angles = {
+                ascendant:
+                  rawAngles.ascendant ||
+                  (ascendant
+                    ? {
+                        name: 'Ascendente',
+                        sign: ascendant.sign,
+                        degree: ascendant.degree,
+                        iconKey: 'ascendant',
+                        icon: angleEmojiMap.Ascendant
+                      }
+                    : null),
+                midheaven: rawAngles.midheaven || null,
+                descendant: rawAngles.descendant || null,
+                ic: rawAngles.ic || null
+              };
+            } else {
+              fallbackReason = 'Resposta inesperada da API de planetas';
+            }
+          }
+
+          // ---------- Casas ----------
+          if (!housesRes.ok) {
+            const reason = `API houses respondeu ${housesRes.status}`;
             fallbackReason = fallbackReason
               ? `${fallbackReason}; ${reason}`
               : reason;
-          }
-        }
+          } else {
+            const housesJson = await housesRes.json();
+            const rawOutput = housesJson?.output;
 
-        // ---------- Enriquecer com casas ----------
-        if (planets.length > 0 && ascendant) {
-          if (houses && houses.length === 12) {
-            planets = mapPlanetsToHouses(planets, houses);
+            const hArr = Array.isArray(rawOutput)
+              ? rawOutput
+              : Array.isArray(rawOutput?.Houses)
+              ? rawOutput.Houses
+              : null;
 
-            const mapH = new Map(houses.map(h => [h.house, h]));
-
-            if (!angles.ascendant && mapH.get(1)) {
-              const h1 = mapH.get(1);
-              angles.ascendant = {
-                name: 'Ascendente',
-                sign: h1.sign,
-                degree: h1.degree,
-                iconKey: 'ascendant',
-                icon: angleEmojiMap.Ascendant
-              };
-            }
-            if (!angles.ic && mapH.get(4)) {
-              const h4 = mapH.get(4);
-              angles.ic = {
-                name: 'Fundo do Céu',
-                sign: h4.sign,
-                degree: h4.degree,
-                iconKey: 'imum-coeli',
-                icon: angleEmojiMap.IC
-              };
-            }
-            if (!angles.descendant && mapH.get(7)) {
-              const h7 = mapH.get(7);
-              angles.descendant = {
-                name: 'Descendente',
-                sign: h7.sign,
-                degree: h7.degree,
-                iconKey: 'descendant',
-                icon: angleEmojiMap.Descendant
-              };
-            }
-            if (!angles.midheaven && mapH.get(10)) {
-              const h10 = mapH.get(10);
-              angles.midheaven = {
-                name: 'Meio do Céu',
-                sign: h10.sign,
-                degree: h10.degree,
-                iconKey: 'midheaven',
-                icon: angleEmojiMap.MC
-              };
+            if (hArr) {
+              houses = hArr
+                .map(item => {
+                  const signEn = item?.zodiac_sign?.name?.en;
+                  const signPt =
+                    signEn && signMap[signEn] ? signMap[signEn] : signEn;
+                  return {
+                    house: item?.house ?? item?.House,
+                    sign: signPt,
+                    degree:
+                      typeof item?.normDegree === 'number'
+                        ? item.normDegree
+                        : null,
+                    fullDegree:
+                      typeof item?.fullDegree === 'number'
+                        ? item.fullDegree
+                        : typeof item?.degree === 'number'
+                        ? item.degree
+                        : null
+                  };
+                })
+                .filter(h => h.house != null)
+                .sort((a, b) => a.house - b.house);
+            } else {
+              const reason = 'Resposta inesperada da API de casas';
+              fallbackReason = fallbackReason
+                ? `${fallbackReason}; ${reason}`
+                : reason;
             }
           }
 
-          return {
-            statusCode: 200,
-            body: JSON.stringify({
-              planets,
-              ascendant,
-              houses,
-              angles,
-              source: 'api'
-            }),
-            headers: { 'Content-Type': 'application/json' }
-          };
-        }
+          // ---------- Enriquecer com casas ----------
+          if (planets.length > 0 && ascendant) {
+            if (houses && houses.length === 12) {
+              planets = mapPlanetsToHouses(planets, houses);
 
-        fallbackReason =
-          fallbackReason || 'API retornou sem dados suficientes de planetas';
+              const mapH = new Map(houses.map(h => [h.house, h]));
+
+              if (!angles.ascendant && mapH.get(1)) {
+                const h1 = mapH.get(1);
+                angles.ascendant = {
+                  name: 'Ascendente',
+                  sign: h1.sign,
+                  degree: h1.degree,
+                  iconKey: 'ascendant',
+                  icon: angleEmojiMap.Ascendant
+                };
+              }
+              if (!angles.ic && mapH.get(4)) {
+                const h4 = mapH.get(4);
+                angles.ic = {
+                  name: 'Fundo do Céu',
+                  sign: h4.sign,
+                  degree: h4.degree,
+                  iconKey: 'imum-coeli',
+                  icon: angleEmojiMap.IC
+                };
+              }
+              if (!angles.descendant && mapH.get(7)) {
+                const h7 = mapH.get(7);
+                angles.descendant = {
+                  name: 'Descendente',
+                  sign: h7.sign,
+                  degree: h7.degree,
+                  iconKey: 'descendant',
+                  icon: angleEmojiMap.Descendant
+                };
+              }
+              if (!angles.midheaven && mapH.get(10)) {
+                const h10 = mapH.get(10);
+                angles.midheaven = {
+                  name: 'Meio do Céu',
+                  sign: h10.sign,
+                  degree: h10.degree,
+                  iconKey: 'midheaven',
+                  icon: angleEmojiMap.MC
+                };
+              }
+            }
+
+            return {
+              statusCode: 200,
+              body: JSON.stringify({
+                planets,
+                ascendant,
+                houses,
+                angles,
+                source: 'api'
+              }),
+              headers: { 'Content-Type': 'application/json' }
+            };
+          }
+
+          fallbackReason =
+            fallbackReason || 'API retornou sem dados suficientes de planetas';
+        }
       } else {
         fallbackReason = 'Data ou hora ausentes/invalidas';
       }
@@ -449,6 +468,22 @@ async function handler(event) {
 }
 
 module.exports = { handler };
+
+/*
+ * Normaliza valores numéricos:
+ * - Aceita number direto;
+ * - Aceita string com vírgula ou ponto;
+ * - Retorna null se não for número finito.
+ */
+function toNumber(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'string') {
+    const norm = value.replace(',', '.').trim();
+    const n = Number(norm);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
 
 /*
  * Fallback simplificado:
@@ -542,7 +577,9 @@ function computeAstroData(dateStr, timeStr) {
   try {
     const [y, m, d] = (dateStr || '').split('-').map(Number);
     const [h, mi] = (timeStr || '').split(':').map(Number);
-    const birth = new Date(Date.UTC(y, (m || 1) - 1, d || 1, h || 0, mi || 0, 0));
+    const birth = new Date(
+      Date.UTC(y, (m || 1) - 1, d || 1, h || 0, mi || 0, 0)
+    );
     const epoch = new Date(Date.UTC(2000, 0, 1, 12, 0, 0));
     const days = (birth - epoch) / 86400000;
 
