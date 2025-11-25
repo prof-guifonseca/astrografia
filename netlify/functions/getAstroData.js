@@ -1,10 +1,21 @@
 /*
  * Netlify Function: getAstroData
  *
- * POST JSON: { date: "YYYY-MM-DD", time: "HH:MM", lat?: number, lon?: number, timezone?: number }
+ * POST JSON:
+ * {
+ *   date: "YYYY-MM-DD",
+ *   time: "HH:MM",
+ *   lat?: number,
+ *   lon?: number,
+ *   // Opção 1 (compatível com versão antiga):
+ *   timezone?: number,  // offset final em horas em relação ao UTC (já incluindo DST, ex: -2)
+ *   // Opção 2 (nova forma recomendada):
+ *   timezoneBase?: number, // fuso padrão (ex: -3 para Brasília)
+ *   dst?: boolean          // se horário de verão estava ativo (+1h)
+ * }
+ *
  * - Usa FreeAstrologyAPI (tropical, topocêntrico).
  * - Se falhar, cai em computeAstroData (aproximação).
- * - Sempre prioriza o fuso de Brasília (-3) como padrão.
  * - Retorna nomes de planetas e signos em PORTUGUÊS.
  */
 
@@ -17,7 +28,7 @@ async function handler(event) {
     };
   }
 
-  let body;
+  let body = {};
   try {
     body = JSON.parse(event.body || '{}');
   } catch (err) {
@@ -27,7 +38,46 @@ async function handler(event) {
     };
   }
 
-  const { date, time, lat, lon } = body || {};
+  const {
+    date,
+    time,
+    lat,
+    lon,
+    timezone,       // offset já pronto (forma antiga)
+    timezoneBase,   // fuso padrão, ex: -3
+    dst             // horário de verão ativo? (+1h)
+  } = body || {};
+
+  // ---------------------------------------------------------------------------
+  // 1) Resolver offset final em horas em relação ao UTC
+  // ---------------------------------------------------------------------------
+  let tzOffset = -3; // padrão Brasília
+
+  // Prioridade 1: se vier "timezone" direto, usa ele
+  if (timezone !== undefined && timezone !== null && timezone !== '') {
+    const tzNum = Number(timezone);
+    if (!Number.isNaN(tzNum) && Number.isFinite(tzNum)) {
+      tzOffset = tzNum;
+    }
+  } else if (timezoneBase !== undefined && timezoneBase !== null && timezoneBase !== '') {
+    // Prioridade 2: base + horário de verão
+    const baseNum = Number(timezoneBase);
+    const dstActive =
+      dst === true ||
+      dst === 'true' ||
+      dst === 1 ||
+      dst === '1' ||
+      dst === 'on';
+
+    if (!Number.isNaN(baseNum) && Number.isFinite(baseNum)) {
+      tzOffset = baseNum + (dstActive ? 1 : 0);
+    }
+  }
+
+  if (!Number.isFinite(tzOffset) || Number.isNaN(tzOffset)) {
+    tzOffset = -3;
+  }
+
   let fallbackReason = null;
 
   const apiKey = process.env.ASTRO_API_KEY;
@@ -78,7 +128,9 @@ async function handler(event) {
     Pluto: '♇'
   };
 
-  // Tenta usar a API externa, com fuso padrão de Brasília
+  // ---------------------------------------------------------------------------
+  // 2) Tenta usar a API externa, agora com tzOffset já resolvido
+  // ---------------------------------------------------------------------------
   if (apiKey) {
     try {
       if (
@@ -99,15 +151,6 @@ async function handler(event) {
         const latitude = typeof lat === 'number' ? lat : undefined;
         const longitude = typeof lon === 'number' ? lon : undefined;
 
-        // Fuso padrão: Brasília (-3). Pode ser sobrescrito se vier timezone explícito.
-        let timezone = -3;
-        if (body && body.timezone !== undefined) {
-          const tzNum = Number(body.timezone);
-          if (!Number.isNaN(tzNum) && Number.isFinite(tzNum)) {
-            timezone = tzNum;
-          }
-        }
-
         const payload = {
           year,
           month,
@@ -117,7 +160,7 @@ async function handler(event) {
           seconds: secondsNum,
           latitude,
           longitude,
-          timezone,
+          timezone: tzOffset, // <-- fuso/hora já com DST tratado
           config: {
             observation_point: 'topocentric',
             ayanamsha: 'tropical',
@@ -177,7 +220,12 @@ async function handler(event) {
             if (planets.length > 0 && ascendant) {
               return {
                 statusCode: 200,
-                body: JSON.stringify({ planets, ascendant, source: 'api' }),
+                body: JSON.stringify({
+                  planets,
+                  ascendant,
+                  source: 'api',
+                  timezone: tzOffset
+                }),
                 headers: { 'Content-Type': 'application/json' }
               };
             }
@@ -198,13 +246,16 @@ async function handler(event) {
     fallbackReason = 'Chave ASTRO_API_KEY não configurada';
   }
 
-  // Fallback local (aproximação)
-  const fallback = computeAstroData(date, time);
+  // ---------------------------------------------------------------------------
+  // 3) Fallback local (aproximação)
+  // ---------------------------------------------------------------------------
+  const fallback = computeAstroData(date, time, tzOffset);
   return {
     statusCode: 200,
     body: JSON.stringify({
       ...fallback,
       source: 'fallback',
+      timezone: tzOffset,
       reason: fallbackReason
     }),
     headers: { 'Content-Type': 'application/json' }
@@ -215,11 +266,11 @@ module.exports = { handler };
 
 /*
  * Fallback simplificado:
- * - Ignora latitude/longitude/timezone.
  * - Usa nomes de planetas e signos em português.
- * - Aproxima posições apenas para não quebrar a aplicação.
+ * - Usa timezoneOffset apenas para aproximar o horário UTC.
+ * - É apenas para não quebrar a aplicação se a API externa falhar.
  */
-function computeAstroData(dateStr, timeStr) {
+function computeAstroData(dateStr, timeStr, timezoneOffset = -3) {
   const SIGNS_PT = [
     'Áries',
     'Touro',
@@ -251,7 +302,22 @@ function computeAstroData(dateStr, timeStr) {
   try {
     const [y, m, d] = (dateStr || '').split('-').map(Number);
     const [h, mi] = (timeStr || '').split(':').map(Number);
-    const birth = new Date(Date.UTC(y, (m || 1) - 1, d || 1, h || 0, mi || 0, 0));
+
+    const tz = Number.isFinite(timezoneOffset) ? timezoneOffset : -3;
+
+    // h = hora LOCAL. Para as efemérides, aproximamos o horário UTC:
+    const utcHour = Number.isFinite(h) ? h - tz : 0;
+    const utcMin = Number.isFinite(mi) ? mi : 0;
+
+    const birth = new Date(Date.UTC(
+      y,
+      (m || 1) - 1,
+      d || 1,
+      utcHour,
+      utcMin,
+      0
+    ));
+
     const epoch = new Date(Date.UTC(2000, 0, 1, 12, 0, 0));
     const days = (birth - epoch) / 86400000;
 
@@ -280,7 +346,7 @@ function computeAstroData(dateStr, timeStr) {
       });
     });
 
-    // Ascendente super aproximado apenas pelo horário
+    // Ascendente aproximado, usando HORA LOCAL
     const hourVal = Number.isFinite(h) ? h : 0;
     const minVal = Number.isFinite(mi) ? mi : 0;
     const timeFraction = ((hourVal + minVal / 60) / 24) % 1;
@@ -293,6 +359,7 @@ function computeAstroData(dateStr, timeStr) {
       ascendant: { sign: ascSign, degree: ascDeg % 30 }
     };
   } catch (err) {
+    console.error('[computeAstroData] fallback error:', err);
     return { planets: [], ascendant: null };
   }
 }
