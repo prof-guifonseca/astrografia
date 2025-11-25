@@ -190,7 +190,7 @@
   // incompleta.
   async function obterPosicoesPlanetarias(params) {
     try {
-      const res = await fetch(API.astro, {
+    const res = await fetch(API.astro, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(params)
@@ -265,7 +265,14 @@
     // Primeira etapa: determinar coordenadas
     const coords = await obterCoordenadas(birthPlace);
     // Segunda etapa: solicitar posições precisas se possível
-    const params = { date: birthDate, time: birthTime, lat: coords?.lat, lon: coords?.lng };
+    // Incluímos fuso horário (timezone) se fornecido pela Netlify function de coordenadas.
+    const params = {
+      date: birthDate,
+      time: birthTime,
+      lat: coords?.lat,
+      lon: coords?.lng,
+      timezone: coords?.timezone
+    };
     const response = await obterPosicoesPlanetarias(params);
     dadosGerados = response;
     summaryEl.textContent = '✅ Mapa gerado com sucesso!';
