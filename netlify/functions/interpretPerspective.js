@@ -64,9 +64,9 @@ ${astroSummary}
       body: JSON.stringify({
         model: "gpt-5.1-chat-latest",
         // aqui você controla o tamanho da resposta
-        max_completion_tokens: 800, 
+        max_completion_tokens: 1000, 
         temperature: 0.8,
-        reasoning_effort: "medium",
+        reasoning_effort: "high",
         messages: [
           {
             role: "system",
