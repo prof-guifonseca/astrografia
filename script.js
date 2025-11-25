@@ -134,6 +134,10 @@
   const submitPerspectiveBtn = $('#submit-perspective');
   const perspectiveResult = $('#perspective-result');
 
+  // Novos elementos (opcionais) de fuso horário / horário de verão
+  const timezoneBaseEl = $('#timezoneBase');
+  const dstFlagEl = $('#dstFlag');
+
   let dadosGerados = null;
 
   // ===============================
@@ -260,14 +264,31 @@
     // Coordenadas (pode vir timezone do OpenCage)
     const coords = await obterCoordenadas(birthPlace);
 
-    // Solicita posições ao backend; inclui timezone se vier das coords
+    // Monta parâmetros básicos
     const params = {
       date: birthDate,
       time: birthTime,
       lat: coords?.lat,
-      lon: coords?.lng,
-      timezone: coords?.timezone
+      lon: coords?.lng
     };
+
+    // Tratamento de fuso horário / horário de verão
+    const timezoneBaseStr = timezoneBaseEl ? timezoneBaseEl.value : '';
+    const dstFlag = dstFlagEl ? dstFlagEl.checked : false;
+
+    if (timezoneBaseEl && timezoneBaseStr !== '') {
+      const tzBaseNum = Number(timezoneBaseStr);
+      if (!Number.isNaN(tzBaseNum) && Number.isFinite(tzBaseNum)) {
+        params.timezoneBase = tzBaseNum;
+      }
+      if (dstFlagEl) {
+        params.dst = dstFlag;
+      }
+    } else if (coords && typeof coords.timezone !== 'undefined') {
+      // Fallback: se não houver campos de fuso no formulário,
+      // usa offset numérico retornado pelo serviço de geocodificação.
+      params.timezone = coords.timezone;
+    }
 
     const response = await obterPosicoesPlanetarias(params);
     dadosGerados = response;
