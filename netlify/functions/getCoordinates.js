@@ -9,7 +9,7 @@
  * with an error status code and a descriptive message.
  */
 
-export async function handler(event) {
+async function handler(event) {
   const place = event.queryStringParameters?.place;
   if (!place) {
     return {
@@ -51,3 +51,5 @@ export async function handler(event) {
     };
   }
 }
+
+module.exports = { handler };
