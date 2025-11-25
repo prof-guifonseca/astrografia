@@ -8,7 +8,7 @@
 
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 
-export async function handler(event) {
+async function handler(event) {
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
@@ -101,6 +101,8 @@ ${astroSummary}
     return respondOk(html);
   }
 }
+
+module.exports = { handler };
 
 /**
  * Converte texto com quebras de linha em HTML simples (<p> e <br>).
