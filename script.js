@@ -195,7 +195,7 @@
 
       const json = await res.json();
       if (json?.planets?.length) {
-        // json já vem com { planets, ascendant, houses, angles, source }
+        // json já vem com { planets, ascendant, houses, angles, source, reason? }
         return json;
       }
 
@@ -484,7 +484,12 @@
       summaryEl.textContent = '✅ Mapa gerado com efemérides precisas.';
     } else if (response.source === 'fallback') {
       summaryEl.textContent = '⚠️ Mapa gerado com cálculo aproximado (fallback do servidor).';
-      showToast('Usando cálculo aproximado de posições. Resultados podem ser menos precisos.', 'warning');
+      if (response.reason) {
+        console.warn('[Astrografia] Fallback do servidor:', response.reason);
+        showToast(`Usando fallback do servidor: ${response.reason}`, 'warning');
+      } else {
+        showToast('Usando cálculo aproximado de posições. Resultados podem ser menos precisos.', 'warning');
+      }
     } else if (response.source === 'fallback-local') {
       summaryEl.textContent = '⚠️ Mapa gerado localmente (modo offline / erro de rede).';
       showToast('Mapa calculado localmente. Use como referência lúdica, não como cálculo profissional.', 'warning');
