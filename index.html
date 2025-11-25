@@ -89,6 +89,24 @@
             required
           />
 
+          <!-- Novo bloco: Fuso horário e horário de verão -->
+          <label for="timezoneBase">Fuso horário (hora padrão, sem horário de verão)</label>
+          <select id="timezoneBase" name="timezoneBase">
+            <option value="-3" selected>UTC-3 — Brasília, São Paulo, Curitiba</option>
+            <option value="-2">UTC-2 — Fernando de Noronha</option>
+            <option value="-4">UTC-4 — Cuiabá, Manaus (parte)</option>
+            <option value="-5">UTC-5 — Rio Branco / oeste do AM</option>
+          </select>
+
+          <label class="checkbox-inline">
+            <input type="checkbox" id="dstFlag" />
+            Horário de verão ativo neste dia? (+1h)
+          </label>
+          <p class="privacy-note">
+            Ex.: Sul/Sudeste do Brasil em janeiro de 1998 tinham horário de verão ativo.
+          </p>
+          <!-- fim do bloco novo -->
+
           <button id="generateMap" class="btn" type="submit">
             Gerar Mapa Astral
           </button>
