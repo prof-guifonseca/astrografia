@@ -49,18 +49,39 @@
     'Câncer': 'Água', 'Escorpião': 'Água', 'Peixes': 'Água'
   };
 
+  // Map para derivar iconKey quando necessário (fallback local)
+  const PLANET_ICON_KEY_PT = {
+    'Sol': 'sun',
+    'Lua': 'moon',
+    'Mercúrio': 'mercury',
+    'Vênus': 'venus',
+    'Marte': 'mars',
+    'Júpiter': 'jupiter',
+    'Saturno': 'saturn',
+    'Urano': 'uranus',
+    'Netuno': 'neptune',
+    'Plutão': 'pluto'
+  };
+
+  const ANGLE_ICON_KEY_PT = {
+    'Ascendente': 'ascendant',
+    'Descendente': 'descendant',
+    'Meio do Céu': 'midheaven',
+    'Fundo do Céu': 'imum-coeli'
+  };
+
   // Definições dos planetas (português) para o fallback local
   const PLANET_DEFS = [
-    { name: 'Sol',      period: 365.256,   init: 280.460,    icon: '☀️' },
-    { name: 'Lua',      period: 27.321582, init: 218.316,    icon: '🌙' },
-    { name: 'Mercúrio', period: 87.969,    init: 252.25084,  icon: '☿️' },
-    { name: 'Vênus',    period: 224.701,   init: 181.97973,  icon: '♀️' },
-    { name: 'Marte',    period: 686.98,    init: 355.43300,  icon: '♂️' },
-    { name: 'Júpiter',  period: 4332.59,   init: 34.35151,   icon: '♃' },
-    { name: 'Saturno',  period: 10759.22,  init: 50.07744,   icon: '♄' },
-    { name: 'Urano',    period: 30685.4,   init: 314.05501,  icon: '♅' },
-    { name: 'Netuno',   period: 60190.03,  init: 304.34866,  icon: '♆' },
-    { name: 'Plutão',   period: 90560,     init: 238.92903,  icon: '♇' }
+    { name: 'Sol',      period: 365.256,   init: 280.460,    icon: '☀️', iconKey: 'sun' },
+    { name: 'Lua',      period: 27.321582, init: 218.316,    icon: '🌙', iconKey: 'moon' },
+    { name: 'Mercúrio', period: 87.969,    init: 252.25084,  icon: '☿️', iconKey: 'mercury' },
+    { name: 'Vênus',    period: 224.701,   init: 181.97973,  icon: '♀️', iconKey: 'venus' },
+    { name: 'Marte',    period: 686.98,    init: 355.43300,  icon: '♂️', iconKey: 'mars' },
+    { name: 'Júpiter',  period: 4332.59,   init: 34.35151,   icon: '♃', iconKey: 'jupiter' },
+    { name: 'Saturno',  period: 10759.22,  init: 50.07744,   icon: '♄', iconKey: 'saturn' },
+    { name: 'Urano',    period: 30685.4,   init: 314.05501,  icon: '♅', iconKey: 'uranus' },
+    { name: 'Netuno',   period: 60190.03,  init: 304.34866,  icon: '♆', iconKey: 'neptune' },
+    { name: 'Plutão',   period: 90560,     init: 238.92903,  icon: '♇', iconKey: 'pluto' }
   ];
 
   /**
@@ -97,7 +118,8 @@
           sign,                // português
           signDegree,
           degree: deg,
-          icon: p.icon
+          icon: p.icon,
+          iconKey: p.iconKey
         });
       });
 
@@ -134,7 +156,7 @@
   const submitPerspectiveBtn = $('#submit-perspective');
   const perspectiveResult = $('#perspective-result');
 
-  // Novos elementos (opcionais) de fuso horário / horário de verão
+  // Novos elementos de fuso horário / horário de verão
   const timezoneBaseEl = $('#timezoneBase');
   const dstFlagEl = $('#dstFlag');
 
@@ -173,16 +195,34 @@
 
       const json = await res.json();
       if (json?.planets?.length) {
-        // json já vem com { planets, ascendant, source }
+        // json já vem com { planets, ascendant, houses, angles, source }
         return json;
       }
 
       throw new Error('Resposta sem planetas');
     } catch (err) {
       console.error('[Astrografia] Erro ao obter posições:', err);
-      // Fallback local: mesmo shape, mas marcando a origem
+      // Fallback local: mesmo shape básico, mas marcando a origem
       const fallback = computeAstroData(params.date, params.time);
-      return { ...fallback, source: 'fallback-local' };
+      return {
+        ...fallback,
+        houses: null,
+        angles: fallback.ascendant
+          ? {
+              ascendant: {
+                name: 'Ascendente',
+                sign: fallback.ascendant.sign,
+                degree: fallback.ascendant.degree,
+                iconKey: 'ascendant',
+                icon: '🌅'
+              },
+              midheaven: null,
+              descendant: null,
+              ic: null
+            }
+          : null,
+        source: 'fallback-local'
+      };
     }
   }
 
@@ -203,38 +243,184 @@
   }
 
   // ===============================
-  //  Renderização das posições
+  //  Renderização do mapa
   // ===============================
-  function exibirPlanetas(planets = [], ascendant = null, source) {
-    chartEl.innerHTML = '<h3 class="fade-in">🔭 Posições Celestes</h3>';
+  function exibirMapa(data = {}) {
+    const planets = data.planets || [];
+    const ascendant = data.ascendant || null;
+    const houses = data.houses || null;
+    const angles = data.angles || {};
+    const source = data.source;
+
+    chartEl.innerHTML = '<h3 class="fade-in">🔭 Posições Planetárias</h3>';
 
     if (!planets.length) {
       chartEl.innerHTML += '<p>⚠️ Nenhuma posição planetária encontrada.</p>';
       return;
     }
 
-    const ul = document.createElement('ul');
-    ul.classList.add('report-html');
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('report-html');
 
-    if (ascendant?.sign) {
-      const grauAsc = typeof ascendant.degree === 'number'
-        ? ascendant.degree.toFixed(1)
-        : '?';
-      ul.innerHTML += `<li>🌅 Ascendente: <strong>${ascendant.sign}</strong> ${grauAsc}°</li>`;
-    }
+    let html = '';
+
+    // ---------- Tabela principal: planetas ----------
+    html += `
+      <h4>Corpos celestes</h4>
+      <table class="astro-table">
+        <thead>
+          <tr>
+            <th>Corpo</th>
+            <th>Signo</th>
+            <th>Casa</th>
+            <th>Grau</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
 
     planets.forEach(p => {
-      const grau = typeof p.signDegree === 'number'
-        ? `${p.signDegree.toFixed(1)}°`
-        : (typeof p.degree === 'number' ? `${p.degree.toFixed(1)}°` : '?°');
-      ul.innerHTML += `<li>${p.icon || '🔹'} ${p.name}: <strong>${p.sign}</strong> ${grau}</li>`;
+      const sign = p.sign || '—';
+      const casa = typeof p.house === 'number' ? p.house : '—';
+
+      let grauNum;
+      if (typeof p.signDegree === 'number') {
+        grauNum = p.signDegree;
+      } else if (typeof p.degree === 'number') {
+        grauNum = p.degree % 30;
+      }
+      const grauStr = typeof grauNum === 'number' ? `${grauNum.toFixed(1)}°` : '—';
+
+      const iconKey = p.iconKey || PLANET_ICON_KEY_PT[p.name];
+      const emoji = p.icon || '';
+      const iconSpan = iconKey
+        ? `<span class="astro-icon astro-icon--${iconKey}" data-icon-key="${iconKey}">${emoji}</span>`
+        : (emoji || '🔹');
+
+      html += `
+        <tr>
+          <td>${iconSpan} <strong>${p.name}</strong></td>
+          <td>${sign}</td>
+          <td>${casa}</td>
+          <td>${grauStr}</td>
+        </tr>
+      `;
     });
 
-    if (source === 'fallback' || source === 'fallback-local') {
-      ul.innerHTML += `<li><em>⚠️ Mapa calculado de forma aproximada (sem efemérides completas).</em></li>`;
+    html += `
+        </tbody>
+      </table>
+    `;
+
+    // ---------- Ângulos principais ----------
+    const angleList = [];
+    if (angles && typeof angles === 'object') {
+      if (angles.ascendant) angleList.push(angles.ascendant);
+      if (angles.midheaven) angleList.push(angles.midheaven);
+      if (angles.descendant) angleList.push(angles.descendant);
+      if (angles.ic) angleList.push(angles.ic);
     }
 
-    chartEl.appendChild(ul);
+    if (angleList.length) {
+      html += `
+        <h4>Ângulos principais</h4>
+        <table class="astro-table">
+          <thead>
+            <tr>
+              <th>Ponto</th>
+              <th>Signo</th>
+              <th>Casa</th>
+              <th>Grau</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      angleList.forEach(a => {
+        const nome = a.name || '—';
+        const signo = a.sign || '—';
+        let casa = a.house;
+
+        if (casa == null) {
+          if (nome === 'Ascendente') casa = 1;
+          else if (nome === 'Fundo do Céu') casa = 4;
+          else if (nome === 'Descendente') casa = 7;
+          else if (nome === 'Meio do Céu') casa = 10;
+        }
+
+        const grauStr =
+          typeof a.degree === 'number' ? `${a.degree.toFixed(1)}°` : '—';
+
+        const iconKey = a.iconKey || ANGLE_ICON_KEY_PT[nome];
+        const emoji = a.icon || '';
+        const iconSpan = iconKey
+          ? `<span class="astro-icon astro-icon--${iconKey}" data-icon-key="${iconKey}">${emoji}</span>`
+          : (emoji || '🔹');
+
+        html += `
+          <tr>
+            <td>${iconSpan} <strong>${nome}</strong></td>
+            <td>${signo}</td>
+            <td>${casa != null ? casa : '—'}</td>
+            <td>${grauStr}</td>
+          </tr>
+        `;
+      });
+
+      html += `
+          </tbody>
+        </table>
+      `;
+    } else if (ascendant?.sign) {
+      // fallback mínimo se angles não veio mas temos ascendente
+      const grauAsc = typeof ascendant.degree === 'number'
+        ? `${ascendant.degree.toFixed(1)}°`
+        : '—';
+      html += `<p>🌅 Ascendente em <strong>${ascendant.sign}</strong> (${grauAsc}).</p>`;
+    }
+
+    // ---------- Cúspides das casas ----------
+    if (Array.isArray(houses) && houses.length) {
+      html += `
+        <h4>Cúspides das casas</h4>
+        <table class="astro-table">
+          <thead>
+            <tr>
+              <th>Casa</th>
+              <th>Signo</th>
+              <th>Grau</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      houses
+        .slice()
+        .sort((a, b) => a.house - b.house)
+        .forEach(h => {
+          const grauStr =
+            typeof h.degree === 'number' ? `${h.degree.toFixed(1)}°` : '—';
+          html += `
+            <tr>
+              <td>${h.house}</td>
+              <td>${h.sign || '—'}</td>
+              <td>${grauStr}</td>
+            </tr>
+          `;
+        });
+
+      html += `
+          </tbody>
+        </table>
+      `;
+    }
+
+    if (source === 'fallback' || source === 'fallback-local') {
+      html += `<p><em>⚠️ Mapa calculado de forma aproximada (sem efemérides completas).</em></p>`;
+    }
+
+    wrapper.innerHTML = html;
+    chartEl.appendChild(wrapper);
   }
 
   // ===============================
@@ -273,21 +459,22 @@
     };
 
     // Tratamento de fuso horário / horário de verão
+    let timezoneOffset;
     const timezoneBaseStr = timezoneBaseEl ? timezoneBaseEl.value : '';
     const dstFlag = dstFlagEl ? dstFlagEl.checked : false;
 
     if (timezoneBaseEl && timezoneBaseStr !== '') {
-      const tzBaseNum = Number(timezoneBaseStr);
+      let tzBaseNum = Number(timezoneBaseStr); // ex.: -3
       if (!Number.isNaN(tzBaseNum) && Number.isFinite(tzBaseNum)) {
-        params.timezoneBase = tzBaseNum;
-      }
-      if (dstFlagEl) {
-        params.dst = dstFlag;
+        if (dstFlag) tzBaseNum += 1; // +1h se horário de verão marcado
+        timezoneOffset = tzBaseNum;
       }
     } else if (coords && typeof coords.timezone !== 'undefined') {
-      // Fallback: se não houver campos de fuso no formulário,
-      // usa offset numérico retornado pelo serviço de geocodificação.
-      params.timezone = coords.timezone;
+      timezoneOffset = coords.timezone;
+    }
+
+    if (typeof timezoneOffset === 'number' && Number.isFinite(timezoneOffset)) {
+      params.timezone = timezoneOffset;
     }
 
     const response = await obterPosicoesPlanetarias(params);
@@ -305,7 +492,7 @@
       summaryEl.textContent = '✅ Mapa gerado.';
     }
 
-    exibirPlanetas(response.planets, response.ascendant, response.source);
+    exibirMapa(response);
     sectionGroup?.classList.remove('hidden');
     perspectiveSec?.classList.remove('hidden');
 
