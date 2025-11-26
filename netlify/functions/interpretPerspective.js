@@ -27,7 +27,8 @@ async function handler(event) {
     };
   }
 
-  const { text, astro } = body;
+  // Também recebemos o primeiro nome para personalização
+  const { text, astro, firstName } = body;
 
   if (!text || typeof text !== "string") {
     return {
@@ -47,21 +48,24 @@ async function handler(event) {
   try {
     const astroSummary = buildAstroSummary(astro);
 
+    // Monta o conteúdo enviado pelo usuário incluindo o primeiro nome, quando presente
     const userContent = `
 Mensagem da pessoa:
 ${text}
+
+Nome da pessoa (primeiro nome, se disponível):
+${firstName || 'Desconhecido'}
 
 Resumo astrológico disponível:
 ${astroSummary}
 `.trim();
 
-    // Prepare the request for the OpenAI Chat Completions API.  We use
-    // `max_tokens` instead of the unsupported `max_completion_tokens` and
-    // omit any experimental parameters like `reasoning_effort` to improve
-    // compatibility.  The model can be overridden via the environment
-    // variable `OPENAI_MODEL`; if not defined we fall back to a sensible
-    // default (gpt-4o).  Temperature is kept at 0.8 to encourage a
-    // slightly creative but still coherent response.
+    /*
+     * Prepara a solicitação para a API de Chat Completions da OpenAI.
+     * Utilizamos max_tokens com valor maior (1200) para permitir respostas densas (~800 tokens).
+     * O prompt do sistema enfatiza um tom afetivo, estético e reflexivo, e orienta o uso natural
+     * do primeiro nome quando disponível. Outras configurações são preservadas.
+     */
     const openAiModel = process.env.OPENAI_MODEL || "gpt-4o";
     const response = await fetch(OPENAI_API_URL, {
       method: "POST",
@@ -71,13 +75,12 @@ ${astroSummary}
       },
       body: JSON.stringify({
         model: openAiModel,
-        max_tokens: 1000,
+        max_tokens: 1200,
         temperature: 0.8,
         messages: [
           {
             role: "system",
-            content:
-              "Você é um astrólogo cuidadoso, crítico com determinismos e acolhedor. Escreva em português do Brasil, em tom reflexivo, tratando astrologia como linguagem simbólica e não como sentença.",
+            content: `Você é um astrólogo cuidadoso, crítico com determinismos e extremamente acolhedor. Sua escrita em português do Brasil combina tom reflexivo, poético e estético, tratando a astrologia como linguagem simbólica e não como sentença. Sempre que possível, dirija-se à pessoa pelo primeiro nome fornecido de maneira natural, sem soar robótico ou repetitivo. Elabore respostas densas e fluidas, com cerca de 800 tokens, que acolham e inspirem, tecendo conexões entre a perspectiva apresentada, o mapa natal e temas da vida.`,
           },
           {
             role: "user",
