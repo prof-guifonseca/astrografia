@@ -156,6 +156,13 @@
   const submitPerspectiveBtn = $('#submit-perspective');
   const perspectiveResult = $('#perspective-result');
 
+  // Elementos para resultados temáticos acumulativos
+  const thematicResultsSection = document.getElementById('thematic-results');
+  const thematicResultsContainer = document.getElementById('thematic-results-container');
+
+  // Armazena o primeiro nome do usuário para personalização
+  let firstName = '';
+
   // Novos elementos de fuso horário / horário de verão
   const timezoneBaseEl = $('#timezoneBase');
   const dstFlagEl = $('#dstFlag');
@@ -438,6 +445,10 @@
       return;
     }
 
+    // Captura o primeiro nome para uso em leituras personalizadas
+    const nameParts = name.split(/\s+/);
+    firstName = nameParts.length ? nameParts[0] : name;
+
     const btn = $('#generateMap');
     btn.disabled = true;
     btn.textContent = '⌛ Gerando...';
@@ -501,6 +512,12 @@
     sectionGroup?.classList.remove('hidden');
     perspectiveSec?.classList.remove('hidden');
 
+    // Limpa resultados temáticos anteriores ao gerar novo mapa
+    if (thematicResultsContainer) {
+      thematicResultsContainer.innerHTML = '';
+      thematicResultsSection?.classList.add('hidden');
+    }
+
     btn.disabled = false;
     btn.textContent = 'Gerar Mapa Astral';
   });
@@ -515,7 +532,7 @@
     const tema = btn.dataset.topic;
     sectionBtns.forEach(b => b.classList.remove('btn-section--active'));
     btn.classList.add('btn-section--active');
-    reportEl.innerHTML = '';
+    // Não limpamos mais o reportEl; as leituras serão acumuladas em cards separados
 
     btn.textContent = 'Gerando...';
     btn.disabled = true;
@@ -544,76 +561,89 @@
           const venus = getPlanet('Vênus');
           const mars = getPlanet('Marte');
           if (!venus || !mars || !asc) break;
-          const venTraits = traitsOf(venus.sign);
-          const marsTraits = traitsOf(mars.sign);
+          const venTraits = traitsOf(venus.sign, 4);
+          const marsTraits = traitsOf(mars.sign, 4);
           const venElement = SIGN_ELEMENTS[venus.sign];
           const marsElement = SIGN_ELEMENTS[mars.sign];
           html.push(`<h4>❤️ Amor e Relacionamentos</h4>`);
-          html.push(`<p>Com Vênus em <strong>${venus.sign}</strong> (${venus.signDegree.toFixed(1)}°), você expressa o afeto de maneira ${venTraits}. Vênus governa a forma como amamos, buscamos harmonia e apreciamos a beleza; este posicionamento revela como você se conecta emocionalmente e valoriza os vínculos afetivos.</p>`);
-          html.push(`<p>Marte em <strong>${mars.sign}</strong> (${mars.signDegree.toFixed(1)}°) acrescenta uma energia ${marsTraits} aos seus desejos e iniciativas. Marte mostra como perseguimos o que queremos, inclusive nos relacionamentos, e como lidamos com a paixão e a assertividade.</p>`);
-          html.push(`<p>${synergyPhrase(venElement, marsElement)} Seu Ascendente em <strong>${asc.sign}</strong> (${asc.degree.toFixed(1)}°) colore a maneira como você se apresenta e influencia as dinâmicas afetivas.</p>`);
+          html.push(`<p>${firstName ? `${firstName}, ` : ''}o seu universo afetivo é moldado por Vênus em <strong>${venus.sign}</strong> (${venus.signDegree.toFixed(1)}°) e Marte em <strong>${mars.sign}</strong> (${mars.signDegree.toFixed(1)}°). Esses dois astros falam sobre a maneira como você ama e deseja. Vênus, que governa o amor e a harmonia, indica que você expressa o afeto de forma ${venTraits}, sempre buscando beleza e equilíbrio nas relações.</p>`);
+          html.push(`<p>Ao mesmo tempo, Vênus em ${venus.sign} convida você a explorar a própria sensualidade com delicadeza. Este posicionamento sugere uma alma que aprecia gestos gentis e gestos de carinho, valorizando a estética e a poesia do cotidiano. Permita-se receber e oferecer ternura, reconhecendo que, para você, amor também é arte.</p>`);
+          html.push(`<p>Marte em ${mars.sign}, por sua vez, acrescenta uma energia ${marsTraits} aos seus desejos e iniciativas. Ele mostra de que forma você persegue o que quer, inclusive nos relacionamentos, revelando como manifesta a paixão e a assertividade. Em ${mars.sign}, Marte impulsiona você a vivenciar encontros com intensidade e autenticidade.</p>`);
+          html.push(`<p>${synergyPhrase(venElement, marsElement)} Seu Ascendente em <strong>${asc.sign}</strong> (${asc.degree.toFixed(1)}°) colore a maneira como você se apresenta, influenciando as dinâmicas afetivas e a forma como inicia conexões. Este ascendente oferece uma lente através da qual o mundo percebe sua busca por cumplicidade.</p>`);
+          html.push(`<p>${firstName ? `${firstName}, ` : ''}o amor para você é um jardim cultivado com paciência e intenção. Explore a doçura de Vênus e a força de Marte para construir laços que honrem quem você é. Lembre-se de que amar é um ato contínuo de presença, onde cada gesto, por menor que pareça, é um universo inteiro.</p>`);
           break;
         }
         case 'carreira': {
           const jup = getPlanet('Júpiter');
           const sat = getPlanet('Saturno');
           if (!jup || !sat || !asc) break;
-          const jupTraits = traitsOf(jup.sign);
-          const satTraits = traitsOf(sat.sign);
+          const jupTraits = traitsOf(jup.sign, 4);
+          const satTraits = traitsOf(sat.sign, 4);
           const jupElement = SIGN_ELEMENTS[jup.sign];
           const satElement = SIGN_ELEMENTS[sat.sign];
           html.push(`<h4>💼 Carreira e Propósito</h4>`);
-          html.push(`<p>Júpiter em <strong>${jup.sign}</strong> (${jup.signDegree.toFixed(1)}°) sugere que suas oportunidades profissionais florescem quando você aposta em ${jupTraits}. Júpiter é o planeta da expansão e do crescimento; seu signo revela onde você busca prosperar.</p>`);
-          html.push(`<p>Saturno em <strong>${sat.sign}</strong> (${sat.signDegree.toFixed(1)}°) traz uma disciplina ${satTraits} às suas ambições. Saturno indica onde precisamos trabalhar com persistência e responsabilidade para conquistar resultados duradouros.</p>`);
-          html.push(`<p>${synergyPhrase(jupElement, satElement)} O Ascendente em <strong>${asc.sign}</strong> (${asc.degree.toFixed(1)}°) mostra a postura que você adota ao perseguir suas metas e como é percebido no ambiente profissional.</p>`);
+          html.push(`<p>${firstName ? `${firstName}, ` : ''}a sua trajetória profissional é guiada por Júpiter em <strong>${jup.sign}</strong> (${jup.signDegree.toFixed(1)}°) e Saturno em <strong>${sat.sign}</strong> (${sat.signDegree.toFixed(1)}°). Júpiter, planeta da expansão e do crescimento, indica que suas oportunidades florescem quando você aposta em ${jupTraits}, permitindo-se sonhar alto e abraçar projetos que ampliem seus horizontes.</p>`);
+          html.push(`<p>Com Júpiter em ${jup.sign}, você é convidado a cultivar uma visão generosa de mundo, aprendendo através de experiências e estudos que nutrem sua curiosidade. Deixe que a curiosidade guie seus passos e permita-se explorar caminhos menos óbvios, pois ali podem estar suas maiores conquistas.</p>`);
+          html.push(`<p>Saturno em ${sat.sign} traz uma disciplina ${satTraits} às suas ambições. Este planeta, guardião dos limites e da responsabilidade, mostra onde precisamos trabalhar com persistência e atenção aos detalhes para conquistar resultados duradouros. Ele pede que você abrace a maturidade e a paciência.</p>`);
+          html.push(`<p>${synergyPhrase(jupElement, satElement)} O Ascendente em <strong>${asc.sign}</strong> (${asc.degree.toFixed(1)}°) mostra a postura que você adota ao perseguir suas metas e como as pessoas percebem seu empenho. A forma como você inicia projetos e apresenta suas ideias influencia diretamente as oportunidades que se manifestam.</p>`);
+          html.push(`<p>${firstName ? `${firstName}, ` : ''}confie na sua habilidade de equilibrar sonho e realidade. Ao unir a expansão de Júpiter com a estrutura de Saturno, você constrói um propósito sólido, capaz de atravessar desafios e criar um legado significativo.</p>`);
           break;
         }
         case 'familia': {
           const moon = getPlanet('Lua');
           const sun = getPlanet('Sol');
           if (!moon || !asc) break;
-          const moonTraits = traitsOf(moon.sign);
-          const sunTraits = sun ? traitsOf(sun.sign) : '';
+          const moonTraits = traitsOf(moon.sign, 4);
+          const sunTraits = sun ? traitsOf(sun.sign, 4) : '';
           const moonElement = SIGN_ELEMENTS[moon.sign];
           const sunElement = sun ? SIGN_ELEMENTS[sun.sign] : null;
           html.push(`<h4>🏠 Família e Origens</h4>`);
-          html.push(`<p>A Lua em <strong>${moon.sign}</strong> (${moon.signDegree.toFixed(1)}°) reflete uma natureza emocional ${moonTraits}. Ela revela como você nutre, procura segurança e se conecta com suas raízes.</p>`);
+          html.push(`<p>${firstName ? `${firstName}, ` : ''}no coração de suas origens reside a Lua em <strong>${moon.sign}</strong> (${moon.signDegree.toFixed(1)}°). Este posicionamento revela uma natureza emocional ${moonTraits}, indicando como você procura segurança e se conecta com suas raízes. A Lua fala de memórias, nutrição e vínculo com o passado.</p>`);
+          html.push(`<p>Ao mergulhar nas suas origens, permita-se revisitar histórias familiares e compreender como elas moldam sua sensibilidade. A Lua em ${moon.sign} convida você a honrar tradições e a buscar conforto nos pequenos rituais cotidianos que o ancoram.</p>`);
           if (sun) {
-            html.push(`<p>O Sol em <strong>${sun.sign}</strong> (${sun.signDegree.toFixed(1)}°) contribui com uma essência ${sunTraits} às suas relações familiares, mostrando como sua identidade se manifesta dentro do lar.</p>`);
+            html.push(`<p>O Sol em <strong>${sun.sign}</strong> (${sun.signDegree.toFixed(1)}°) contribui com uma essência ${sunTraits} às suas relações familiares, mostrando como sua identidade se manifesta dentro do lar. Seu brilho pessoal inspira aqueles que estão ao seu redor e colore a maneira como você percebe a família.</p>`);
+            html.push(`<p>O Sol, essência da individualidade, ilumina as paredes da casa interna e externa. Valorize os momentos em que você é chamado a ser a força e a alegria da família, mas também permita-se receber apoio quando necessário.</p>`);
           }
-          html.push(`<p>${synergyPhrase(moonElement, sunElement || moonElement)} Seu Ascendente em <strong>${asc.sign}</strong> (${asc.degree.toFixed(1)}°) mostra como você acolhe e protege aqueles ao seu redor.</p>`);
+          html.push(`<p>${synergyPhrase(moonElement, sunElement || moonElement)} Seu Ascendente em <strong>${asc.sign}</strong> (${asc.degree.toFixed(1)}°) mostra como você acolhe e protege aqueles ao seu redor, revelando a máscara que veste ao entrar em contato com seu clã. Esta energia inicial influencia como você constrói lares e abriga memórias.</p>`);
+          html.push(`<p>${firstName ? `${firstName}, ` : ''}cultivar o espaço interno é uma arte. Honre suas emoções e permita que sua casa, seja ela física ou simbólica, seja um refúgio onde você possa sempre voltar e recarregar suas energias.</p>`);
           break;
         }
         case 'espiritualidade': {
           const nep = getPlanet('Netuno');
           const jup = getPlanet('Júpiter');
           if (!nep || !asc) break;
-          const nepTraits = traitsOf(nep.sign);
-          const jupTraits = jup ? traitsOf(jup.sign) : '';
+          const nepTraits = traitsOf(nep.sign, 4);
+          const jupTraits = jup ? traitsOf(jup.sign, 4) : '';
           const nepElement = SIGN_ELEMENTS[nep.sign];
           const jupElement = jup ? SIGN_ELEMENTS[jup.sign] : null;
           html.push(`<h4>🧘 Espiritualidade</h4>`);
-          html.push(`<p>Netuno em <strong>${nep.sign}</strong> (${nep.signDegree.toFixed(1)}°) aponta para uma conexão espiritual ${nepTraits}. Netuno rege sonhos, intuições e o inconsciente; seu signo indica por onde você se perde e se encontra no mistério da vida.</p>`);
+          html.push(`<p>${firstName ? `${firstName}, ` : ''}sua jornada espiritual é profundamente influenciada por Netuno em <strong>${nep.sign}</strong> (${nep.signDegree.toFixed(1)}°). Netuno rege sonhos, intuições e o inconsciente; em ${nep.sign}, ele aponta para uma conexão ${nepTraits} com o mistério da vida. Ele convida a dissolver limites e a entregar-se ao fluxo.</p>`);
+          html.push(`<p>Este posicionamento amplia sua sensibilidade e pede que você confie na linguagem do invisível: símbolos, sincronicidades e a voz interior. Práticas como meditação, arte ou contemplação da natureza podem despertar visões e acalmar a alma.</p>`);
           if (jup) {
-            html.push(`<p>Júpiter em <strong>${jup.sign}</strong> (${jup.signDegree.toFixed(1)}°) complementa sua jornada espiritual com uma energia ${jupTraits}, incentivando a busca por sabedoria e sentido.</p>`);
+            html.push(`<p>Júpiter em <strong>${jup.sign}</strong> (${jup.signDegree.toFixed(1)}°) complementa sua jornada com uma energia ${jupTraits}, incentivando a busca por sabedoria e sentido. Júpiter expande as fronteiras do conhecimento e sugere que o estudo de filosofias e culturas pode nutrir seu espírito.</p>`);
+            html.push(`<p>Ao combinar Netuno e Júpiter, você equilibra fé e razão, misticismo e filosofia. Permita-se explorar caminhos espirituais e acadêmicos; ambos enriquecem sua experiência e ajudam a construir uma cosmovisão abrangente.</p>`);
           }
-          html.push(`<p>${synergyPhrase(nepElement, jupElement || nepElement)} O Ascendente em <strong>${asc.sign}</strong> (${asc.degree.toFixed(1)}°) orienta a forma como você manifesta sua busca interior no cotidiano.</p>`);
+          html.push(`<p>${synergyPhrase(nepElement, jupElement || nepElement)} O Ascendente em <strong>${asc.sign}</strong> (${asc.degree.toFixed(1)}°) orienta a forma como você manifesta sua busca interior no cotidiano. Ele colore a maneira como você inicia jornadas espirituais e como compartilha suas descobertas com os outros.</p>`);
+          html.push(`<p>${firstName ? `${firstName}, ` : ''}lembre-se de que espiritualidade não é um destino, mas um caminho. Confie na sua intuição e permita-se ser guiado por uma curiosidade sagrada; assim, cada passo se torna um ritual de conexão com o todo.</p>`);
           break;
         }
         case 'missao': {
           const sun = getPlanet('Sol');
           const jup = getPlanet('Júpiter');
           if (!sun || !asc) break;
-          const sunTraits = traitsOf(sun.sign);
-          const jupTraits = jup ? traitsOf(jup.sign) : '';
+          const sunTraits = traitsOf(sun.sign, 4);
+          const jupTraits = jup ? traitsOf(jup.sign, 4) : '';
           const sunElement = SIGN_ELEMENTS[sun.sign];
           const jupElement = jup ? SIGN_ELEMENTS[jup.sign] : null;
           html.push(`<h4>🚀 Missão de Vida</h4>`);
-          html.push(`<p>O Sol em <strong>${sun.sign}</strong> (${sun.signDegree.toFixed(1)}°) revela uma essência marcada por ${sunTraits}. O Sol representa nosso núcleo, vitalidade e propósito.</p>`);
+          html.push(`<p>${firstName ? `${firstName}, ` : ''}o Sol em <strong>${sun.sign}</strong> (${sun.signDegree.toFixed(1)}°) revela uma essência marcada por ${sunTraits}. O Sol representa nosso núcleo, vitalidade e propósito, indicando onde brilhamos de maneira autêntica. Essa é a chama que impulsiona sua missão.</p>`);
+          html.push(`<p>Reconhecer o seu Sol implica assumir sua luz e, ao mesmo tempo, suas sombras. Ao honrar as qualidades do signo solar, você se alinha com o coração da sua existência e se sente mais vivo, confiante e seguro de si.</p>`);
           if (jup) {
-            html.push(`<p>Júpiter em <strong>${jup.sign}</strong> (${jup.signDegree.toFixed(1)}°) reforça seu propósito ao acrescentar uma visão ${jupTraits}, ampliando seus horizontes.</p>`);
+            html.push(`<p>Júpiter em <strong>${jup.sign}</strong> (${jup.signDegree.toFixed(1)}°) reforça seu propósito ao acrescentar uma visão ${jupTraits}, ampliando seus horizontes. Este planeta impulsiona a busca por significado e convida a uma vida com sentido maior.</p>`);
+            html.push(`<p>Combinar Sol e Júpiter significa viver com entusiasmo e generosidade. Ao explorar oportunidades, estudos e viagens, você alimenta a chama do Sol e expande as possibilidades para sua missão se desenvolver.</p>`);
           }
-          html.push(`<p>${synergyPhrase(sunElement, jupElement || sunElement)} O Ascendente em <strong>${asc.sign}</strong> (${asc.degree.toFixed(1)}°) colore a expressão dessa missão, mostrando como você se coloca no mundo.</p>`);
+          html.push(`<p>${synergyPhrase(sunElement, jupElement || sunElement)} O Ascendente em <strong>${asc.sign}</strong> (${asc.degree.toFixed(1)}°) colore a expressão dessa missão, mostrando como você se coloca no mundo e como os outros testemunham seu brilho. Ele serve como ponte entre essência e exterior.</p>`);
+          html.push(`<p>${firstName ? `${firstName}, ` : ''}sua missão de vida é um processo contínuo de descoberta e entrega. Nutra seu Sol, expanda com Júpiter e use o Ascendente como canal para compartilhar seus dons. Confie que, ao seguir seu coração, você já está cumprindo seu destino.</p>`);
           break;
         }
         case 'desafios': {
@@ -621,19 +651,22 @@
           const mars = getPlanet('Marte');
           const sat = getPlanet('Saturno');
           if (!plut || !mars || !asc) break;
-          const plutTraits = traitsOf(plut.sign);
-          const marsTraits = traitsOf(mars.sign);
-          const satTraits = sat ? traitsOf(sat.sign) : '';
+          const plutTraits = traitsOf(plut.sign, 4);
+          const marsTraits = traitsOf(mars.sign, 4);
+          const satTraits = sat ? traitsOf(sat.sign, 4) : '';
           const plutElement = SIGN_ELEMENTS[plut.sign];
           const marsElement = SIGN_ELEMENTS[mars.sign];
           const satElement = sat ? SIGN_ELEMENTS[sat.sign] : null;
           html.push(`<h4>⚖️ Desafios Pessoais</h4>`);
-          html.push(`<p>Plutão em <strong>${plut.sign}</strong> (${plut.signDegree.toFixed(1)}°) fala de processos de ${plutTraits}. Este planeta mostra onde precisamos nos transformar profundamente.</p>`);
-          html.push(`<p>Marte em <strong>${mars.sign}</strong> (${mars.signDegree.toFixed(1)}°) apresenta desafios ligados à ${marsTraits}. Reconhecer a natureza de Marte ajuda a lidar melhor com impulsos e confrontos.</p>`);
+          html.push(`<p>${firstName ? `${firstName}, ` : ''}Plutão em <strong>${plut.sign}</strong> (${plut.signDegree.toFixed(1)}°) fala de processos de ${plutTraits}. Ele mostra onde precisamos nos transformar profundamente, onde a vida nos convida a renascer das cinzas e liberar padrões antigos.</p>`);
+          html.push(`<p>Encarar Plutão é abraçar a sombra e reconhecer que em cada fim existe um recomeço. Permita-se mergulhar em temas que despertam medo ou resistência; ali reside o potencial de cura e empoderamento.</p>`);
+          html.push(`<p>Marte em <strong>${mars.sign}</strong> (${mars.signDegree.toFixed(1)}°) apresenta desafios ligados à ${marsTraits}. Este planeta nos ensina a manejar impulsos, a canalizar a energia de forma construtiva e a encarar confrontos sem perder a integridade.</p>`);
           if (sat) {
-            html.push(`<p>Saturno em <strong>${sat.sign}</strong> (${sat.signDegree.toFixed(1)}°) adiciona uma camada de ${satTraits} aos seus obstáculos, indicando onde a vida pode exigir disciplina.</p>`);
+            html.push(`<p>Saturno em <strong>${sat.sign}</strong> (${sat.signDegree.toFixed(1)}°) adiciona uma camada de ${satTraits} aos seus obstáculos, indicando onde a vida pode exigir disciplina, paciência e estrutura. É através de Saturno que aprendemos a respeitar limites e a construir bases sólidas.</p>`);
+            html.push(`<p>Saturno é o mestre do tempo; ele não nega recompensas, apenas espera que estejamos prontos. Ao abraçar seus ensinamentos, você transforma desafios em degraus para o crescimento.</p>`);
           }
-          html.push(`<p>${synergyPhrase(plutElement, marsElement)} Seu Ascendente em <strong>${asc.sign}</strong> (${asc.degree.toFixed(1)}°) ajuda a integrar essas forças, apontando caminhos de crescimento.</p>`);
+          html.push(`<p>${synergyPhrase(plutElement, marsElement)} Seu Ascendente em <strong>${asc.sign}</strong> (${asc.degree.toFixed(1)}°) ajuda a integrar essas forças, apontando caminhos de crescimento. A forma como você aborda seus desafios influencia a transmutação de energia.</p>`);
+          html.push(`<p>${firstName ? `${firstName}, ` : ''}lembre-se de que desafios não são punições, mas oportunidades de amadurecer. Ao aceitar a complexidade de Plutão, a coragem de Marte e a sabedoria de Saturno, você se fortalece e aprende a trilhar sua jornada com resiliência.</p>`);
           break;
         }
         default: {
@@ -649,7 +682,16 @@
     }
 
     const interpretation = interpretTheme(tema, dadosGerados);
-    reportEl.innerHTML = interpretation;
+
+    // Cria um novo card para esta leitura e adiciona ao container de leituras
+    if (thematicResultsContainer) {
+      const card = document.createElement('div');
+      card.className = 'report-html card';
+      card.innerHTML = interpretation;
+      thematicResultsContainer.appendChild(card);
+      // Exibe a seção de resultados se estiver oculta
+      thematicResultsSection?.classList.remove('hidden');
+    }
 
     btn.textContent = '✔️ Interpretado';
     btn.disabled = true;
@@ -671,7 +713,8 @@
       const res = await fetch(API.perspective, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: texto, astro: dadosGerados })
+        // Inclui o primeiro nome para personalizar a interpretação no backend
+        body: JSON.stringify({ text: texto, astro: dadosGerados, firstName })
       });
       if (res.ok) {
         const json = await res.json();
